@@ -117,7 +117,7 @@ void ControllerManager::run()
     _model->update();
 
     // keep updated the position reference
-    _model->getMotorPosition(_motor_position);
+    _robot->getMotorPosition(_motor_position);
     _robot->setPositionReference(_motor_position);
 
     // Keep disabled joint impedance controller
@@ -226,7 +226,7 @@ void ControllerManager::joint_map_generator(){
 
                 else{
 
-                    _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
+                    _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping() + ControlMode::Position();
                     _stiff_tmp_state[parent_joint->name] = _zero;
                     _damp_tmp_state[parent_joint->name] = _zero;
 

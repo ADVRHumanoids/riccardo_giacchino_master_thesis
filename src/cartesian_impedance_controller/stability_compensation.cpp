@@ -46,6 +46,12 @@ void StabilityCompensation::compute_position_error(){
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
     _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(0, 0) * _orientation_matrix(0, 0) + _orientation_matrix(1, 0) * _orientation_matrix(1, 0)));
 
+    // ------------ DEBUG ------------
+    // cout << "IMU_info:" << endl;
+    // cout << "Roll angle: " << _roll_angle << endl;
+    // cout << "Pitch angle: " << _pitch_angle << endl;
+    // cout << "Angular velocity: " << _angular_vel.transpose() << endl;
+    // cout << "Linear acceleration: " << _linear_acc.transpose() << endl;
 }
 
 void StabilityCompensation::control_law(){
@@ -53,6 +59,10 @@ void StabilityCompensation::control_law(){
     _roll_acc = - _K_v_roll * (_angular_vel.x()) - _K_p_roll * (_roll_angle);
 
     _pitch_acc = - _K_v_pitch * (_angular_vel.y()) - _K_p_pitch * (_pitch_angle);
+
+    // ------------ DEBUG ------------
+    // cout << "Roll action: " << _roll_acc << endl;
+    // cout << "Pitch action: " << _pitch_acc << endl;
 
 }
 

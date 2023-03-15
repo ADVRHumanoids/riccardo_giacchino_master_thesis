@@ -1,7 +1,7 @@
 XBotInterface:
   urdf_path: $(rospack find centauro_urdf)/urdf/centauro.urdf
   srdf_path: $(rospack find centauro_srdf)/srdf/centauro.srdf
-  #joint_map_path: configs/CentauroConfig/joint_map/centauro_joint_map.yaml
+  joint_map_path: /home/embedded/xbot2_ws/src/CentauroConfig//joint_map/centauro_joint_map.yaml
 
 ModelInterface:
   model_type: RBDL
@@ -12,10 +12,10 @@ ModelInterface:
 xbotcore_device_configs:
     sim: $(rospack find centauro_config)/hal/centauro_gz.yaml
     dummy: $(rospack find centauro_config)/hal/centauro_dummy.yaml
-    ec_pos: $PWD/hal/centauro_ec_all.yaml
-    ec_imp: $PWD/hal/centauro_ec_all.yaml
-    ec_ub_imp: $PWD/hal/centauro_ec_all.yaml
-    ec_idle: $PWD/hal/centauro_ec_all.yaml
+    ec_pos: /home/embedded/xbot2_ws/src/CentauroConfig/hal/centauro_ec_all.yaml
+    ec_imp: /home/embedded/xbot2_ws/src/CentauroConfig/hal/centauro_ec_all.yaml
+    ec_ub_imp: /home/embedded/xbot2_ws/src/CentauroConfig/hal/centauro_ec_all.yaml
+    ec_idle: /home/embedded/xbot2_ws/src/CentauroConfig/hal/centauro_ec_all.yaml
 
 
 # threads
@@ -72,13 +72,10 @@ xbotcore_plugins:
     
     ec_ros: {thread: nrt_main, type: ec_ros}
 
-
-
 # global parameters
 xbotcore_param:
   /xbot/hal/joint_safety/filter_autostart: {value: true, type: bool}
   /xbot/hal/joint_safety/filter_cutoff_hz: {value: 2.0, type: double}
-
 
 
 
