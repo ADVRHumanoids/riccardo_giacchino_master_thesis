@@ -26,8 +26,8 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
 
-    _K_v_roll = 2 * sqrt(_K_p_roll);
-    _K_v_pitch = 2 * sqrt(_K_p_pitch);
+    _K_v_roll = 0.3 * 2 * sqrt(_K_p_roll);
+    _K_v_pitch = 0.3 * 2 * sqrt(_K_p_pitch);
 
     _orientation_matrix =  Eigen::Matrix3d::Identity();
     _angular_vel = _linear_acc = Eigen::Vector3d::Zero();
@@ -54,8 +54,12 @@ void StabilityCompensation::compute_position_error(){
                      _linear_acc,
                      _angular_vel);
 
-    _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
-    _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(2, 2) * _orientation_matrix(2, 2) + _orientation_matrix(2, 1) * _orientation_matrix(2, 1)));
+    // rpy = _orientation_matrix.eulerAngles(0, 1, 2);
+    // _roll_angle = rpy(0);
+    // _pithc_angle = rpy(1);
+
+    // _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
+    // _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(2, 2) * _orientation_matrix(2, 2) + _orientation_matrix(2, 1) * _orientation_matrix(2, 1)));
 
     // ------------ SAFETY FEATURES ------------
     check_angle();

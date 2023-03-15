@@ -69,6 +69,8 @@ xbotcore_plugins:
       thread: rt_main
       params:
         stack_path: /home/embedded/riccardo_ws/src/riccardo_giacchino_master_thesis/src/cartesian_impedance_controller/stack_problem.yaml
+        stab_controller_path: /home/embedded/riccardo_ws/src/riccardo_giacchino_master_thesis/src/cartesian_impedance_controller/roll_pitch_controller_config.yaml
+        
     
     ec_ros: {thread: nrt_main, type: ec_ros}
 
