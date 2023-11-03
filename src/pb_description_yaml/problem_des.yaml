@@ -1,0 +1,14 @@
+## stack of tasks definition ##
+
+stack:
+    - ["FrontLeftLeg"]
+
+## task and constraint definition ##
+
+FrontLeftLeg:
+    type: "Cartesian"
+    name: front_lf_leg
+    active: true    ## specify if the task should be active ##
+    distal_link: ankle2_1
+    base_link: ankle1_1
+    orientation_gain: 2.0
