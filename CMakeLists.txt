@@ -33,7 +33,8 @@ add_library(${PROJECT_NAME} src/motiongenerator.cpp
                             src/basestategetter.cpp
                             src/emafilter.cpp
                             src/lowpassfilter.cpp
-                            src/grahamscanconvexhull.cpp)
+                            src/grahamscanconvexhull.cpp
+                            src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 ## First project - setup_node
@@ -74,7 +75,22 @@ target_link_libraries(raise_one_leg_node
                         ${PROJECT_NAME}
                         awesome_utils::awesome_utils)
 
- install(TARGETS stability_node vel_control_node raise_one_leg_node base_motion_node ${PROJECT_NAME}
+add_executable(cartesian_imp_controller_node src/cartesian_impedance_controller/cic_main.cpp)
+target_link_libraries(cartesian_imp_controller_node
+                        ${catkin_LIBRARIES}
+                        ${cartesian_interface_LIBRARIES}
+                        ${xbot2_LIBRARIES}
+                        ${PROJECT_NAME}
+                        awesome_utils::awesome_utils)
+
+
+install(TARGETS stability_node
+                vel_control_node
+                raise_one_leg_node
+                base_motion_node
+                cartesian_imp_controller_node
+                ${PROJECT_NAME}
+
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
