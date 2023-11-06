@@ -44,11 +44,11 @@ public:
 
     // Setter and Getter
 
-    Eigen::Matrix6d get_K_diag() const;
-    void set_K_diag(const Eigen::Matrix6d &newK_diag);
+    void set_K_and_D(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag);
 
-    Eigen::Matrix6d D_diag() const;
-    void setD_diag(const Eigen::Matrix6d &newD_diag);
+    Eigen::Matrix6d get_K_diag() const;
+
+    Eigen::Matrix6d get_D_diag() const;
 
 private:
 
