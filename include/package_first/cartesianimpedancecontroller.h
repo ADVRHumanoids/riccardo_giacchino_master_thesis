@@ -42,17 +42,33 @@ public:
      */
     ~CartesianImpedanceController();
 
+    // Setter and Getter
 
+    Eigen::Matrix6d get_K_diag() const;
+    void set_K_diag(const Eigen::Matrix6d &newK_diag);
+
+    Eigen::Matrix6d D_diag() const;
+    void setD_diag(const Eigen::Matrix6d &newD_diag);
 
 private:
 
+    double _dt; //Sampling time
+
     ros::NodeHandle _nh;
+    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
     XBot::ModelInterface::Ptr _model;
     XBot::RobotInterface::Ptr _robot;
-    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
-    double _dt; //Sampling time
+    Eigen::Matrix6d _K_diag, _D_diag;   // Diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
+    Eigen::Matrix6d _K, _D; // Computed Stiffness and damping matrix
+
+    Eigen::Vector6d _xddot_ref, _xdot_ref, _x_ref; // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link
+    Eigen::Vector6d _xddot_real, _xdot_real, _x_real;  // Actual acceleration, velocity, position of the end-effector w.r.t. to the base link
+    Eigen::Vector6d _eddot, _edot, _e; // Error between the actual and reference values
+
+
+
 };
 
 #endif // CARTESIANIMPEDANCECONTROLLER_H

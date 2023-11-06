@@ -1,5 +1,7 @@
 #include "cartesianimpedancecontroller.h"
 
+// ---------------------------------------- CONSTRUCTOR ---------------------------------------- //
+
 CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh, double dt):
     _nh(nh),
     _dt(dt)
@@ -32,9 +34,37 @@ CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh, d
     }
 }
 
+// ---------------------------------------- DESTRUCTOR ---------------------------------------- //
+
 CartesianImpedanceController::~CartesianImpedanceController()
 {
     cout << "[ END ]: The program is terminating..." << endl;
 }
+
+// ---------------------------------------- SETTER && GETTER ---------------------------------------- //
+
+void CartesianImpedanceController::set_K_and_D(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag)
+{
+    _K_diag = newK_diag;
+    _D_diag = newD_diag;
+}
+
+Eigen::Matrix6d CartesianImpedanceController::get_K_diag() const
+{
+    return _K_diag;
+}
+
+Eigen::Matrix6d CartesianImpedanceController::get_D_diag() const
+{
+    return _D_diag;
+}
+
+
+
+
+
+
+
+
 
 
