@@ -89,6 +89,19 @@ void CartesianImpedanceController::update_K_and_D()
 
 }
 
+
+
+Eigen::Vector6d CartesianImpedanceController::compute_force()
+{
+    Eigen::Vector6d force;
+
+    // TODO: update the error value
+
+    force = (_op_sp_inertia * _eddot) + (_D * _edot) + (_K * _e);
+
+    return force;
+}
+
 // ---------------------------------------- SETTER && GETTER ---------------------------------------- //
 
 void CartesianImpedanceController::set_stiffness_damping(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag)
@@ -106,6 +119,13 @@ Eigen::Matrix6d CartesianImpedanceController::get_stiffness() const
 Eigen::Matrix6d CartesianImpedanceController::get_damping() const
 {
     return _D_diag;
+}
+
+void CartesianImpedanceController::set_reference_value(Eigen::Vector6d acc_ref, Eigen::Vector6d vel_ref, Eigen::Vector6d pos_ref)
+{
+    _xddot_ref = acc_ref;
+    _xdot_ref = vel_ref;
+    _x_ref = pos_ref;
 }
 
 

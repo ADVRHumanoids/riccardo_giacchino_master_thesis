@@ -56,6 +56,13 @@ public:
      */
     void update_K_and_D();
 
+    /**
+     * @brief compute_force is the function that given all the error of acc, vel and pos compute the virtual force of
+     * the damper and spring system, using the previously updated operational space inertia, stiffness and damping matrix
+     * @return return the wrench containig the force and moment
+     */
+    Eigen::Vector6d compute_force();
+
     // Setter and Getter
 
     /**
@@ -77,11 +84,19 @@ public:
      */
     Eigen::Matrix6d get_damping() const;
 
+    /**
+     * @brief set_reference_value is used to set the position and
+     * @param acc_ref is the reference acceleration value of the end effector
+     * @param vel_ref is the reference velocity value of the end effector
+     * @param pos_ref is the reference position value of the end effector
+     */
+    void set_reference_value(Eigen::Vector6d acc_ref, Eigen::Vector6d vel_ref, Eigen::Vector6d pos_ref);
+
 private:
 
     // Variables
 
-    double _dt; //Sampling time
+    double _dt; // Sampling time
 
     const string _root_link;
     const string _end_effector_link;
@@ -96,8 +111,13 @@ private:
     Eigen::Matrix6d _K, _D; // Computed Stiffness and damping matrix
     Eigen::Matrix6d _op_sp_inertia; // Operational space inertial matrix, usually referred to as Λ
 
-    Eigen::Vector6d _xddot_ref, _xdot_ref, _x_ref; // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link
+    // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link
+    Eigen::Vector6d _xddot_ref = Eigen::Vector6d::Zero();
+    Eigen::Vector6d _xdot_ref = Eigen::Vector6d::Zero();
+    Eigen::Vector6d _x_ref = Eigen::Vector6d::Zero();
+
     Eigen::Vector6d _xddot_real, _xdot_real, _x_real;  // Actual acceleration, velocity, position of the end-effector w.r.t. to the base link
+
     Eigen::Vector6d _eddot, _edot, _e; // Error between the actual and reference values
 
     Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
