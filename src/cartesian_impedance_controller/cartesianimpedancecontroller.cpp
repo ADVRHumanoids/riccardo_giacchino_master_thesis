@@ -2,9 +2,14 @@
 
 // ---------------------------------------- CONSTRUCTOR ---------------------------------------- //
 
-CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh, double dt):
+CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh,
+                                                           double dt,
+                                                           const string root_link,
+                                                           const string end_effector_link):
     _nh(nh),
-    _dt(dt)
+    _dt(dt),
+    _root_link(root_link),
+    _end_effector_link(end_effector_link)
 {
     XBot::ConfigOptions xbot_cfg = XBot::ConfigOptionsFromParamServer(_nh);
     _model = XBot::ModelInterface::getModel(xbot_cfg);

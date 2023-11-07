@@ -33,10 +33,12 @@ class CartesianImpedanceController
 
 public:
 
+    CartesianImpedanceController();
+
     /**
      * @brief CartesianImpedanceController constructor
      */
-    CartesianImpedanceController(ros::NodeHandle nh, double dt);
+    CartesianImpedanceController(ros::NodeHandle nh, double dt, const string root_link, const string end_effector_link);
 
     /**
      * @brief CartesianImpedanceController destructor
