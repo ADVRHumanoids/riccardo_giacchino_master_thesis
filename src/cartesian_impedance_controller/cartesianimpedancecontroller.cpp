@@ -38,7 +38,7 @@ CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh, d
     // TODO: compute automatically the number of joint of the kinematic chain
     // By defalt should be 7, that are the number of joints in a single leg
 
-    _velocity_filter = SignProcUtils::MovAvrgFilt(_n_joints = 7, _dt, 2.0);
+    _velocity_filter = SignProcUtils::MovAvrgFilt(_n_joints = 7, _dt, 20.0);
 }
 
 // ---------------------------------------- DESTRUCTOR ---------------------------------------- //
@@ -62,7 +62,7 @@ void CartesianImpedanceController::cholesky_decomp()
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(_op_sp_inertia);
     if (eigensolver.info() != Eigen::Success) {
-        // TODO: handle eigenvalue decomposition failure
+        throw std::runtime_error("Impossible the compute the Cholesky decomposition");
     }
 
     // Get the eigenvectors in Q and eigenvalues in Lambda
@@ -81,7 +81,11 @@ void CartesianImpedanceController::update_inertia()
 
     _op_sp_inertia = Eigen::Matrix6d::Identity();
 
-    cholesky_decomp();  // Store the resulting matrix in the variable _Q;
+    try {
+        cholesky_decomp();  // Store the resulting matrix in the variable _Q;
+    } catch (const std::exception& e) {
+        std::cerr << "[ERROR]: " << e.what() << endl;
+    }
 
 }
 
@@ -118,11 +122,26 @@ void CartesianImpedanceController::update_real_value()
 
 }
 
+void CartesianImpedanceController::compute_error()
+{
+
+    _e = _x_real - _x_ref;  // Position error
+
+    _edot = _xdot_real - _xdot_ref; // Velocity error
+
+    _eddot = _xddot_real - _xddot_ref; // Acceleration error
+
+}
+
 Eigen::Vector6d CartesianImpedanceController::compute_force()
 {
-    Eigen::Vector6d force;
 
-    // TODO: update the error value
+    update_inertia();
+    update_K_and_D();
+    update_real_value();
+    compute_error();
+
+    Eigen::Vector6d force;
 
     force = (_op_sp_inertia * _eddot) + (_D * _edot) + (_K * _e);
 
@@ -133,9 +152,11 @@ Eigen::Vector6d CartesianImpedanceController::compute_force()
 
 void CartesianImpedanceController::set_stiffness_damping(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag)
 {
-    // TODO: add cout check
     _K_diag = newK_diag;
+    cout << "[OK]: New diagonal stiffness matrix added\n" << _K_diag << endl;
+
     _D_diag = newD_diag;
+    cout << "[OK]: New diagonal damping matrix added" << _D_diag << endl;
 }
 
 Eigen::Matrix6d CartesianImpedanceController::get_stiffness() const
@@ -153,15 +174,5 @@ void CartesianImpedanceController::set_reference_value(Eigen::Vector6d acc_ref, 
     _xddot_ref = acc_ref;
     _xdot_ref = vel_ref;
     _x_ref = pos_ref;
+    cout << "[OK]: Set new reference value:\n" << _xddot_ref << endl << _xdot_ref << endl << _x_ref << endl;
 }
-
-
-
-
-
-
-
-
-
-
-
