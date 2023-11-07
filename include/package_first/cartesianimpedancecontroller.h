@@ -42,17 +42,42 @@ public:
      */
     ~CartesianImpedanceController();
 
+    // Functions
+
+    /**
+     * @brief on_initialize
+     */
+    void on_initialize();
+
     // Setter and Getter
 
-    void set_K_and_D(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag);
+    /**
+     * @brief set_stiffness_damping
+     * @param newK_diag
+     * @param newD_diag
+     */
+    void set_stiffness_damping(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag);
 
-    Eigen::Matrix6d get_K_diag() const;
+    /**
+     * @brief get_stiffness
+     * @return
+     */
+    Eigen::Matrix6d get_stiffness() const;
 
-    Eigen::Matrix6d get_D_diag() const;
+    /**
+     * @brief get_damping
+     * @return
+     */
+    Eigen::Matrix6d get_damping() const;
 
 private:
 
+    // Variables
+
     double _dt; //Sampling time
+
+    const string _root_link;
+    const string _end_effector_link;
 
     ros::NodeHandle _nh;
     std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
@@ -62,12 +87,21 @@ private:
 
     Eigen::Matrix6d _K_diag, _D_diag;   // Diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
     Eigen::Matrix6d _K, _D; // Computed Stiffness and damping matrix
+    Eigen::Matrix6d _op_sp_inertia; // Operational space inertial matrix, usually referred to as Λ
 
     Eigen::Vector6d _xddot_ref, _xdot_ref, _x_ref; // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link
     Eigen::Vector6d _xddot_real, _xdot_real, _x_real;  // Actual acceleration, velocity, position of the end-effector w.r.t. to the base link
     Eigen::Vector6d _eddot, _edot, _e; // Error between the actual and reference values
 
+    Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
+    Eigen::MatrixXd _B; // Inertia matrix in joint space
+    Eigen::Matrix6d _Q; // Used in the Cholesky decomposition of the operational space inertia
 
+    // Functions
+
+    void cholesky_decomp();
+
+    Eigen::Matrix6d matrix_sqrt(Eigen::Matrix6d matrix);
 
 };
 

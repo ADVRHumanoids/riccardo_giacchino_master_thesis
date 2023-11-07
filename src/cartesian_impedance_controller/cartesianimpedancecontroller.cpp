@@ -41,23 +41,58 @@ CartesianImpedanceController::~CartesianImpedanceController()
     cout << "[ END ]: The program is terminating..." << endl;
 }
 
+// ---------------------------------------- FUNCTIONS ---------------------------------------- //
+
+void CartesianImpedanceController::cholesky_decomp()
+{
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(_op_sp_inertia);
+    if (eigensolver.info() != Eigen::Success) {
+        // TODO: handle eigenvalue decomposition failure
+    }
+
+    // Get the eigenvectors in Q and eigenvalues in Lambda
+    _Q = eigensolver.eigenvectors();
+    //_lambda = eigensolver.eigenvalues().real();
+
+}
+
+Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix)
+{
+    return matrix.array().sqrt();
+}
+
+void CartesianImpedanceController::on_initialize()
+{
+    //_model->getRelativeJacobian(_end_effector_link, _root_link, _J);
+    //_model->getInertiaInverse(_B);
+
+    _op_sp_inertia = Eigen::Matrix6d::Identity();
+
+    _K = _Q * _K_diag * _Q.transpose();
+    _D = 2 * _Q * _D_diag * matrix_sqrt(_K_diag) * _Q.transpose();
+
+
+}
+
 // ---------------------------------------- SETTER && GETTER ---------------------------------------- //
 
-void CartesianImpedanceController::set_K_and_D(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag)
+void CartesianImpedanceController::set_stiffness_damping(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag)
 {
+    // TODO: add cout check
     _K_diag = newK_diag;
     _D_diag = newD_diag;
 }
 
-Eigen::Matrix6d CartesianImpedanceController::get_K_diag() const
+Eigen::Matrix6d CartesianImpedanceController::get_stiffness() const
 {
     return _K_diag;
 }
 
-Eigen::Matrix6d CartesianImpedanceController::get_D_diag() const
+Eigen::Matrix6d CartesianImpedanceController::get_damping() const
 {
     return _D_diag;
 }
+
 
 
 
