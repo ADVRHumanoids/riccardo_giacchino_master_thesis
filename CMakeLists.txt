@@ -35,7 +35,7 @@ add_library(${PROJECT_NAME} src/motiongenerator.cpp
                             src/lowpassfilter.cpp
                             src/grahamscanconvexhull.cpp
                             src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} awesome_utils::awesome_utils)
 
 ## First project - setup_node
 add_executable(setup_node src/setup.cpp)

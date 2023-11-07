@@ -18,6 +18,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
+#include <awesome_utils/awesome_utils/sign_proc_utils.hpp>
 
 using namespace std;
 using namespace XBot;
@@ -55,6 +56,12 @@ public:
      * in the operational space inertia
      */
     void update_K_and_D();
+
+    /**
+     * @brief update_real_value update the actual value of the position, velocity and acceleration of the end-effector
+     * from the model of the robot
+     */
+    void update_real_value();
 
     /**
      * @brief compute_force is the function that given all the error of acc, vel and pos compute the virtual force of
@@ -117,12 +124,16 @@ private:
     Eigen::Vector6d _x_ref = Eigen::Vector6d::Zero();
 
     Eigen::Vector6d _xddot_real, _xdot_real, _x_real;  // Actual acceleration, velocity, position of the end-effector w.r.t. to the base link
+    Eigen::Vector6d _xdot_prec; // Used for the computation of the acceleration that is done by dv/dt
 
     Eigen::Vector6d _eddot, _edot, _e; // Error between the actual and reference values
 
     Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
     Eigen::MatrixXd _B; // Inertia matrix in joint space
     Eigen::Matrix6d _Q; // Used in the Cholesky decomposition of the operational space inertia
+
+    double _n_joints;
+    SignProcUtils::MovAvrgFilt _velocity_filter;   // Moving average filter of the velocity used to compute the acceleration through derivative
 
     // Functions
 

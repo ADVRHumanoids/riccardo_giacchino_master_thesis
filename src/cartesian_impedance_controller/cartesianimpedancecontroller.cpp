@@ -34,6 +34,11 @@ CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh, d
     }
 
     _op_sp_inertia = Eigen::Matrix6d::Identity();
+
+    // TODO: compute automatically the number of joint of the kinematic chain
+    // By defalt should be 7, that are the number of joints in a single leg
+
+    _velocity_filter = SignProcUtils::MovAvrgFilt(_n_joints = 7, _dt, 2.0);
 }
 
 // ---------------------------------------- DESTRUCTOR ---------------------------------------- //
@@ -89,7 +94,29 @@ void CartesianImpedanceController::update_K_and_D()
 
 }
 
+void CartesianImpedanceController::update_real_value()
+{
 
+    // Get position
+    Eigen::Affine3d pose;
+    _model->getPose(_end_effector_link, _root_link, pose);
+
+    _x_real << pose.translation(), pose.rotation().eulerAngles(0, 1, 2);
+
+    // Get velocity
+    _xdot_prec = _xdot_real;
+    _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
+
+    // Get acceleration
+    //_model->getRelativeAccelerationTwist(_end_effector_link, _root_link, _xddot_real);
+    Eigen::VectorXd vect = _xdot_real.head(6); // casting the data in a VectorXd object needed for the filter function
+    _velocity_filter.add_sample(vect);
+    _velocity_filter.get(vect);  // filtering velocity of the CoM
+    _xdot_real = vect.head(6);
+
+    _xddot_real = (_xdot_real - _xdot_prec) / _dt;
+
+}
 
 Eigen::Vector6d CartesianImpedanceController::compute_force()
 {
