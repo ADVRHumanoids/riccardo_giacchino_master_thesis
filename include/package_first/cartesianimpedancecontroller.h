@@ -45,9 +45,16 @@ public:
     // Functions
 
     /**
-     * @brief on_initialize
+     * @brief update_inertia is a function that update the operational space inertia matrix and compute the matrix Q
+     * from its Cholesky factor
      */
-    void on_initialize();
+    void update_inertia();
+
+    /**
+     * @brief update_K_and_D is a function the update the value of the stiffness and damping matrix due to the change
+     * in the operational space inertia
+     */
+    void update_K_and_D();
 
     // Setter and Getter
 
@@ -99,8 +106,17 @@ private:
 
     // Functions
 
+    /**
+     * @brief cholesky_decomp compute the Cholesky decomposition of the operational space inertia
+     * in order to obtain the matrix Q used in the computation of stiffness (K) and damping (D)
+     */
     void cholesky_decomp();
 
+    /**
+     * @brief matrix_sqrt compute the square root of each elements of the matrix
+     * @param matrix
+     * @return the square root of the input matrix
+     */
     Eigen::Matrix6d matrix_sqrt(Eigen::Matrix6d matrix);
 
 };

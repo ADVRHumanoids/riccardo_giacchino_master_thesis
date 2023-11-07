@@ -32,6 +32,8 @@ CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh, d
         _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
         cerr << "[ Error ]: " << e.what() << endl;
     }
+
+    _op_sp_inertia = Eigen::Matrix6d::Identity();
 }
 
 // ---------------------------------------- DESTRUCTOR ---------------------------------------- //
@@ -41,10 +43,18 @@ CartesianImpedanceController::~CartesianImpedanceController()
     cout << "[ END ]: The program is terminating..." << endl;
 }
 
+
 // ---------------------------------------- FUNCTIONS ---------------------------------------- //
+
+Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix)
+{
+    return matrix.array().sqrt();
+}
+
 
 void CartesianImpedanceController::cholesky_decomp()
 {
+
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(_op_sp_inertia);
     if (eigensolver.info() != Eigen::Success) {
         // TODO: handle eigenvalue decomposition failure
@@ -56,21 +66,26 @@ void CartesianImpedanceController::cholesky_decomp()
 
 }
 
-Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix)
+void CartesianImpedanceController::update_inertia()
 {
-    return matrix.array().sqrt();
-}
 
-void CartesianImpedanceController::on_initialize()
-{
+    // TODO: understand how to compute the joint inertia just for a leg
+
     //_model->getRelativeJacobian(_end_effector_link, _root_link, _J);
     //_model->getInertiaInverse(_B);
 
     _op_sp_inertia = Eigen::Matrix6d::Identity();
 
-    _K = _Q * _K_diag * _Q.transpose();
-    _D = 2 * _Q * _D_diag * matrix_sqrt(_K_diag) * _Q.transpose();
+    cholesky_decomp();  // Store the resulting matrix in the variable _Q;
 
+}
+
+void CartesianImpedanceController::update_K_and_D()
+{
+
+    _K = _Q * _K_diag * _Q.transpose();
+
+    _D = 2 * _Q * _D_diag * matrix_sqrt(_K_diag) * _Q.transpose();
 
 }
 
