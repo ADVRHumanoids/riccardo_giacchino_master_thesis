@@ -2,56 +2,56 @@
 
 // ---------------------------------------- CONSTRUCTOR ---------------------------------------- //
 
-CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh,
-                                                           double dt,
-                                                           const string root_link,
-                                                           const string end_effector_link):
-    _nh(nh),
-    _dt(dt),
-    _root_link(root_link),
-    _end_effector_link(end_effector_link)
-{
-    XBot::ConfigOptions xbot_cfg = XBot::ConfigOptionsFromParamServer(_nh);
-    _model = XBot::ModelInterface::getModel(xbot_cfg);
+//CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh,
+//                                                           double dt,
+//                                                           const string root_link,
+//                                                           const string end_effector_link):
+//    _nh(nh),
+//    _dt(dt),
+//    _root_link(root_link),
+//    _end_effector_link(end_effector_link)
+//{
+//    XBot::ConfigOptions xbot_cfg = XBot::ConfigOptionsFromParamServer(_nh);
+//    _model = XBot::ModelInterface::getModel(xbot_cfg);
 
-    try
-    {
-        _robot = XBot::RobotInterface::getRobot(xbot_cfg);
-        _model->syncFrom(*_robot);
-        _robot->setControlMode(XBot::ControlMode::Position());  //TODO: check if the control mode Position is still correct
-        _robot->setControlMode(
-            {
-                {"j_wheel_1", XBot::ControlMode::Velocity()},
-                {"j_wheel_2", XBot::ControlMode::Velocity()},
-                {"j_wheel_3", XBot::ControlMode::Velocity()},
-                {"j_wheel_4", XBot::ControlMode::Velocity()}
-            });
-    }
-    catch (const std::exception& e)
-    {
-        // Setting homing postion of the robot
-        Eigen::VectorXd qhome;
-        _model->getRobotState("home", qhome);
-        _model->setJointPosition(qhome);
-        _model->update();
-        _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
-        cerr << "[ Error ]: " << e.what() << endl;
-    }
+//    try
+//    {
+//        _robot = XBot::RobotInterface::getRobot(xbot_cfg);
+//        _model->syncFrom(*_robot);
+//        _robot->setControlMode(XBot::ControlMode::Position());  //TODO: check if the control mode Position is still correct
+//        _robot->setControlMode(
+//            {
+//                {"j_wheel_1", XBot::ControlMode::Velocity()},
+//                {"j_wheel_2", XBot::ControlMode::Velocity()},
+//                {"j_wheel_3", XBot::ControlMode::Velocity()},
+//                {"j_wheel_4", XBot::ControlMode::Velocity()}
+//            });
+//    }
+//    catch (const std::exception& e)
+//    {
+//        // Setting homing postion of the robot
+//        Eigen::VectorXd qhome;
+//        _model->getRobotState("home", qhome);
+//        _model->setJointPosition(qhome);
+//        _model->update();
+//        _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
+//        cerr << "[ Error ]: " << e.what() << endl;
+//    }
 
-    _op_sp_inertia = Eigen::Matrix6d::Identity();
+//    _op_sp_inertia = Eigen::Matrix6d::Identity();
 
-    // TODO: compute automatically the number of joint of the kinematic chain
-    // By defalt should be 7, that are the number of joints in a single leg
+//    // TODO: compute automatically the number of joint of the kinematic chain
+//    // By defalt should be 7, that are the number of joints in a single leg
 
-    _velocity_filter = SignProcUtils::MovAvrgFilt(_n_joints = 7, _dt, 20.0);
-}
+//    _velocity_filter = SignProcUtils::MovAvrgFilt(_n_joints = 7, _dt, 20.0);
+//}
 
-// ---------------------------------------- DESTRUCTOR ---------------------------------------- //
+//// ---------------------------------------- DESTRUCTOR ---------------------------------------- //
 
-CartesianImpedanceController::~CartesianImpedanceController()
-{
-    cout << "[ END ]: The program is terminating..." << endl;
-}
+//CartesianImpedanceController::~CartesianImpedanceController()
+//{
+//    cout << "[ END ]: The program is terminating..." << endl;
+//}
 
 
 // ---------------------------------------- FUNCTIONS ---------------------------------------- //

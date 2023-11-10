@@ -28,24 +28,36 @@ using namespace XBot;
 /**
  * @brief The CartesianImpedanceController class
  */
-class CartesianImpedanceController
+class CartesianImpedanceController : public ControlPlugin
 {
 
 public:
 
-    CartesianImpedanceController();
+    using ControlPlugin::ControlPlugin;
 
-    /**
-     * @brief CartesianImpedanceController constructor
-     */
-    CartesianImpedanceController(ros::NodeHandle nh, double dt, const string root_link, const string end_effector_link);
 
-    /**
-     * @brief CartesianImpedanceController destructor
-     */
-    ~CartesianImpedanceController();
+//    CartesianImpedanceController();
+
+//    /**
+//     * @brief CartesianImpedanceController constructor
+//     */
+//    CartesianImpedanceController(ros::NodeHandle nh, double dt, const string root_link, const string end_effector_link);
+
+//    /**
+//     * @brief CartesianImpedanceController destructor
+//     */
+//    ~CartesianImpedanceController();
 
     // Functions
+
+    /*
+     * TODO: To be implemented
+     *
+     * virtual bool on_initialize() = 0;
+     * virtual void on_start();
+     * virtual void run() = 0;
+     * virtual void on_stop();
+    */
 
     /**
      * @brief update_inertia is a function that update the operational space inertia matrix and compute the matrix Q
