@@ -62,10 +62,10 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 }
 
 
-void CartesianImpedanceController::cholesky_decomp()
+void CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix)
 {
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(_op_sp_inertia);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix);
     if (eigensolver.info() != Eigen::Success) {
         throw std::runtime_error("Impossible the compute the Cholesky decomposition");
     }
@@ -79,15 +79,15 @@ void CartesianImpedanceController::cholesky_decomp()
 void CartesianImpedanceController::update_inertia()
 {
 
-    // TODO: understand how to compute the joint inertia just for a leg
+    //_op_sp_inertia = Eigen::Matrix6d::Identity();
 
-    //_model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-    //_model->getInertiaInverse(_B);
+    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
+    _model->getInertiaInverse(_B_inv);
 
-    _op_sp_inertia = Eigen::Matrix6d::Identity();
+    _op_sp_inertia = _J * _B_inv * _J.transpose();
 
     try {
-        cholesky_decomp();  // Store the resulting matrix in the variable _Q;
+        cholesky_decomp(_op_sp_inertia);  // Store the resulting matrix in the variable _Q;
     } catch (const std::exception& e) {
         std::cerr << "[ERROR]: " << e.what() << endl;
     }

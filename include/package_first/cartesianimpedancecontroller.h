@@ -140,7 +140,7 @@ private:
     Eigen::Vector6d _eddot, _edot, _e; // Error between the actual and reference values
 
     Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
-    Eigen::MatrixXd _B; // Inertia matrix in joint space
+    Eigen::MatrixXd _B_inv; // Inertia matrix in joint space
     Eigen::Matrix6d _Q; // Used in the Cholesky decomposition of the operational space inertia
 
     double _n_joints;
@@ -152,7 +152,7 @@ private:
      * @brief cholesky_decomp compute the Cholesky decomposition of the operational space inertia
      * in order to obtain the matrix Q used in the computation of stiffness (K) and damping (D)
      */
-    void cholesky_decomp();
+    void cholesky_decomp(Eigen::Matrix6d matrix);
 
     /**
      * @brief matrix_sqrt compute the square root of each elements of the matrix
