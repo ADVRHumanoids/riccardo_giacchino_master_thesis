@@ -23,7 +23,9 @@
 using namespace std;
 using namespace XBot;
 
-// -------------------------- CLASS -------------------------- //
+// ==============================================================================
+// Class
+// ==============================================================================
 
 /**
  * @brief The CartesianImpedanceController class
@@ -35,32 +37,11 @@ public:
 
     using ControlPlugin::ControlPlugin;
 
-
-//    CartesianImpedanceController();
-
-//    /**
-//     * @brief CartesianImpedanceController constructor
-//     */
-//    CartesianImpedanceController(ros::NodeHandle nh, double dt, const string root_link, const string end_effector_link);
-
-//    /**
-//     * @brief CartesianImpedanceController destructor
-//     */
-//    ~CartesianImpedanceController();
-
-
     // ==============================================================================
     // Real-time functions
     // ==============================================================================
 
-    /*
-     * TODO: To be implemented
-     *
-     * virtual bool on_initialize() = 0;
-     * virtual void on_start();
-     * virtual void run() = 0;
-     * virtual void on_stop();
-    */
+    // TODO: To be implemented
 
     bool on_initialize() override;
     void on_start() override;
@@ -111,31 +92,35 @@ public:
     // ==============================================================================
 
     /**
-     * @brief set_stiffness_damping
-     * @param newK_diag
-     * @param newD_diag
+     * @brief Set the stiffness matrix to a new value.
+     *
+     * This function sets the stiffness matrix to the specified Eigen::Matrix6d.
+     *
+     * @param new_K The new stiffness matrix.
      */
-    void set_stiffness_damping(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag);
+    void set_stiffness(const Eigen::Matrix6d &new_K);
 
     /**
-     * @brief get_stiffness
-     * @return the most updated value of the stiffness matrix
+     * @brief Reset the stiffness matrix to a default value.
+     *
+     * This function resets the stiffness matrix to a default or initial value.
+     * Use this when you want to clear or reset the stiffness matrix.
      */
-    Eigen::Matrix6d get_stiffness() const;
+    void set_stiffness();
 
     /**
-     * @brief get_damping
-     * @return the most updated value of the damping matrix
-     */
-    Eigen::Matrix6d get_damping() const;
-
-    /**
-     * @brief set_reference_value is used to set the position and
+     * @brief set_reference_value sets the reference values used to compute the error in the impedance dynamic
      * @param acc_ref is the reference acceleration value of the end effector
      * @param vel_ref is the reference velocity value of the end effector
      * @param pos_ref is the reference position value of the end effector
      */
-    void set_reference_value(Eigen::Vector6d acc_ref, Eigen::Vector6d vel_ref, Eigen::Vector6d pos_ref);
+    void set_reference_value(Eigen::Vector6d& acc_ref, Eigen::Vector6d& vel_ref, Eigen::Vector6d& pos_ref);
+
+    /**
+     * @brief setEnd_effector_link set the name of the end effector link, empty string by default.
+     * @param newEnd_effector_link the new value.
+     */
+    void setEnd_effector_link(const string &newEnd_effector_link);
 
 private:
 
@@ -144,17 +129,13 @@ private:
     double _dt; // sampling time
     double _n_joints; // number of joints
 
-    const string _root_link;
-    const string _end_effector_link;
+    string _root_link = "base_link";
+    string _end_effector_link = "";
 
     ros::NodeHandle _nh;
     //std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
     XBot::ModelInterface::Ptr _model;
-
-    Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
-    Eigen::Matrix6d _K, _D; // computed Stiffness and damping matrix
-    Eigen::Matrix6d _op_sp_inertia; // operational space inertial matrix, usually referred to as Λ
 
     // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link. By default equal to zero
     Eigen::Vector6d _xddot_ref, _xdot_ref, _x_ref;
@@ -166,13 +147,19 @@ private:
     // Error between the actual and reference values
     Eigen::Vector6d _eddot, _edot, _e;
 
+    Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
+    Eigen::Matrix6d _K, _D; // computed Stiffness and damping matrix
+
+    Eigen::Matrix6d _op_sp_inertia; // operational space inertial matrix, usually referred to as Λ
     Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
-    Eigen::MatrixXd _B_inv; // Inertia matrix in joint space
-    Eigen::Matrix6d _Q; // Used in the Cholesky decomposition of the operational space inertia
+    Eigen::MatrixXd _B_inv; // inertia matrix in joint space
+    Eigen::Matrix6d _Q; // resulting matrix from the Cholesky decomposition of the operational space inertia, used in the computation of the damping matrix
 
     SignProcUtils::MovAvrgFilt _velocity_filter;   // Moving average filter of the velocity, used to compute the acceleration through numerical derivative
 
-    // Functions
+    // ==============================================================================
+    // Additional Functions
+    // ==============================================================================
 
     /**
      * @brief cholesky_decomp compute the Cholesky decomposition of the operational space inertia
