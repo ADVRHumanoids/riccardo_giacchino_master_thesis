@@ -48,7 +48,10 @@ public:
 //     */
 //    ~CartesianImpedanceController();
 
-    // Functions
+
+    // ==============================================================================
+    // Real-time functions
+    // ==============================================================================
 
     /*
      * TODO: To be implemented
@@ -59,6 +62,15 @@ public:
      * virtual void on_stop();
     */
 
+    bool on_initialize() override;
+    void on_start() override;
+    void run() override;
+    void on_stop() override;
+
+    // ==============================================================================
+    // Additional Functions
+    // ==============================================================================
+
     /**
      * @brief update_inertia is a function that update the operational space inertia matrix and compute the matrix Q
      * from its Cholesky factor
@@ -66,15 +78,16 @@ public:
     void update_inertia();
 
     /**
-     * @brief update_K_and_D is a function the update the value of the stiffness and damping matrix due to the change
-     * in the operational space inertia
+     * @brief update_K_omega is a function that computes the new value of the natural frequency due to the change
+     * in the operational space inertia matrix
      */
-    void update_K_and_D();
+    void update_K_omega();
 
     /**
-     * @brief update_real_value update the actual value of the position, velocity and acceleration of the end-effector
-     * from the model of the robot
+     * @brief update_D compute the new value of the damping matrix after computing Q and the natural frequency matrix _K_omega
      */
+    void update_D();
+
     void update_real_value();
 
     /**
@@ -93,7 +106,9 @@ public:
      */
     Eigen::Vector6d compute_force();
 
+    // ==============================================================================
     // Setter and Getter
+    // ==============================================================================
 
     /**
      * @brief set_stiffness_damping
@@ -104,13 +119,13 @@ public:
 
     /**
      * @brief get_stiffness
-     * @return
+     * @return the most updated value of the stiffness matrix
      */
     Eigen::Matrix6d get_stiffness() const;
 
     /**
      * @brief get_damping
-     * @return
+     * @return the most updated value of the damping matrix
      */
     Eigen::Matrix6d get_damping() const;
 
@@ -126,37 +141,36 @@ private:
 
     // Variables
 
-    double _dt; // Sampling time
+    double _dt; // sampling time
+    double _n_joints; // number of joints
 
     const string _root_link;
     const string _end_effector_link;
 
     ros::NodeHandle _nh;
-    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
+    //std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
     XBot::ModelInterface::Ptr _model;
-    XBot::RobotInterface::Ptr _robot;
 
-    Eigen::Matrix6d _K_diag, _D_diag;   // Diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
-    Eigen::Matrix6d _K, _D; // Computed Stiffness and damping matrix
-    Eigen::Matrix6d _op_sp_inertia; // Operational space inertial matrix, usually referred to as Λ
+    Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
+    Eigen::Matrix6d _K, _D; // computed Stiffness and damping matrix
+    Eigen::Matrix6d _op_sp_inertia; // operational space inertial matrix, usually referred to as Λ
 
     // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link. By default equal to zero
-    Eigen::Vector6d _xddot_ref = Eigen::Vector6d::Zero();
-    Eigen::Vector6d _xdot_ref = Eigen::Vector6d::Zero();
-    Eigen::Vector6d _x_ref = Eigen::Vector6d::Zero();
+    Eigen::Vector6d _xddot_ref, _xdot_ref, _x_ref;
 
-    Eigen::Vector6d _xddot_real, _xdot_real, _x_real;  // Actual acceleration, velocity, position of the end-effector w.r.t. to the base link
-    Eigen::Vector6d _xdot_prec; // Used for the computation of the acceleration that is done by dv/dt
+    // Actual acceleration, velocity, position of the end-effector w.r.t. to the base link
+    Eigen::Vector6d _xddot_real, _xdot_real, _x_real;
+    Eigen::Vector6d _xdot_prec; // used for the computation of the acceleration that is done by dv/dt
 
-    Eigen::Vector6d _eddot, _edot, _e; // Error between the actual and reference values
+    // Error between the actual and reference values
+    Eigen::Vector6d _eddot, _edot, _e;
 
     Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
     Eigen::MatrixXd _B_inv; // Inertia matrix in joint space
     Eigen::Matrix6d _Q; // Used in the Cholesky decomposition of the operational space inertia
 
-    double _n_joints;
-    SignProcUtils::MovAvrgFilt _velocity_filter;   // Moving average filter of the velocity used to compute the acceleration through derivative
+    SignProcUtils::MovAvrgFilt _velocity_filter;   // Moving average filter of the velocity, used to compute the acceleration through numerical derivative
 
     // Functions
 

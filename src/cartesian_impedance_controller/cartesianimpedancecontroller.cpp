@@ -1,5 +1,7 @@
 #include "cartesianimpedancecontroller.h"
 
+// WARNING: THIS VERSION IS NOT WORKING
+
 // ---------------------------------------- CONSTRUCTOR ---------------------------------------- //
 
 //CartesianImpedanceController::CartesianImpedanceController(ros::NodeHandle nh,
@@ -54,7 +56,50 @@
 //}
 
 
-// ---------------------------------------- FUNCTIONS ---------------------------------------- //
+
+
+// ==============================================================================
+// Real-time functions
+// ==============================================================================
+
+bool CartesianImpedanceController::on_initialize(){
+
+    //TODO: inizialize variable
+
+    _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
+    _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
+    _eddot = _edot = _e = Eigen::Vector6d::Zero();
+
+    _J = _B_inv = _Q = Eigen::MatrixXd::Zero();
+    _K_omega = _K = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Zero();
+
+
+
+
+    //TODO: manage control mode
+
+
+    return true;
+}
+
+void CartesianImpedanceController::on_start(){
+    //TODO: implement
+    //set zero the impedance of the controller already implemented
+    //save in some way the state of the robot in this moment of time
+    //that has to be setted back again in the on_stop
+}
+
+void CartesianImpedanceController::on_stop()
+{
+    //TODO: implement
+    //set back again the state of the robot that you changed in the on_start funcition
+}
+
+
+
+// ==============================================================================
+// Additional Functions
+// ==============================================================================
 
 Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix)
 {
@@ -66,25 +111,24 @@ void CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix)
 {
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix);
-    if (eigensolver.info() != Eigen::Success) {
+
+    if (eigensolver.info() != Eigen::Success)
         throw std::runtime_error("Impossible the compute the Cholesky decomposition");
-    }
 
     // Get the eigenvectors in Q and eigenvalues in Lambda
     _Q = eigensolver.eigenvectors();
-    //_lambda = eigensolver.eigenvalues().real();
 
 }
 
 void CartesianImpedanceController::update_inertia()
 {
 
-    //_op_sp_inertia = Eigen::Matrix6d::Identity();
-
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
     _model->getInertiaInverse(_B_inv);
 
     _op_sp_inertia = _J * _B_inv * _J.transpose();
+
+    _op_sp_inertia = _op_sp_inertia.inverse();
 
     try {
         cholesky_decomp(_op_sp_inertia);  // Store the resulting matrix in the variable _Q;
@@ -94,13 +138,14 @@ void CartesianImpedanceController::update_inertia()
 
 }
 
-void CartesianImpedanceController::update_K_and_D()
+void CartesianImpedanceController::update_K_omega()
 {
+    _K = _Q * _K_omega * _Q.transpose();
+}
 
-    _K = _Q * _K_diag * _Q.transpose();
-
-    _D = 2 * _Q * _D_diag * matrix_sqrt(_K_diag) * _Q.transpose();
-
+void CartesianImpedanceController::update_D()
+{
+    _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
 }
 
 void CartesianImpedanceController::update_real_value()
@@ -142,7 +187,8 @@ Eigen::Vector6d CartesianImpedanceController::compute_force()
 {
 
     update_inertia();
-    update_K_and_D();
+    update_K_omega();
+    update_D();
     update_real_value();
     compute_error();
 
@@ -153,25 +199,27 @@ Eigen::Vector6d CartesianImpedanceController::compute_force()
     return force;
 }
 
-// ---------------------------------------- SETTER && GETTER ---------------------------------------- //
+// ==============================================================================
+// Setter and Getter
+// ==============================================================================
 
-void CartesianImpedanceController::set_stiffness_damping(const Eigen::Matrix6d &newK_diag, const Eigen::Matrix6d &newD_diag)
+void CartesianImpedanceController::set_stiffness_damping(const Eigen::Matrix6d &newK, const Eigen::Matrix6d &newD_zeta)
 {
-    _K_diag = newK_diag;
-    cout << "[OK]: New diagonal stiffness matrix added\n" << _K_diag << endl;
+    _K = newK;
+    cout << "[OK]: New diagonal stiffness matrix added\n" << _K_omega << endl;
 
-    _D_diag = newD_diag;
-    cout << "[OK]: New diagonal damping matrix added" << _D_diag << endl;
+    _D_zeta = newD_zeta;
+    cout << "[OK]: New diagonal damping matrix added" << _D_zeta << endl;
 }
 
 Eigen::Matrix6d CartesianImpedanceController::get_stiffness() const
 {
-    return _K_diag;
+    return _K;
 }
 
 Eigen::Matrix6d CartesianImpedanceController::get_damping() const
 {
-    return _D_diag;
+    return _D;
 }
 
 void CartesianImpedanceController::set_reference_value(Eigen::Vector6d acc_ref, Eigen::Vector6d vel_ref, Eigen::Vector6d pos_ref)
