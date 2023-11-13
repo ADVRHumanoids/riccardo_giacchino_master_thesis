@@ -34,21 +34,25 @@ add_library(${PROJECT_NAME} src/motiongenerator.cpp
                             src/emafilter.cpp
                             src/lowpassfilter.cpp
                             src/grahamscanconvexhull.cpp
-                            src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp
-                            src/cartesian_impedance_controller/controllermanager.cpp)
+                            src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
+
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} awesome_utils::awesome_utils)
 
-## First project - setup_node
-add_executable(setup_node src/setup.cpp)
-target_link_libraries(setup_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
 
-## Second project - leg_motion
-add_executable(leg_motion_node src/leg_motion.cpp)
-target_link_libraries(leg_motion_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} awesome_utils::awesome_utils)
 
-## Third project - robot motion
-add_executable(moving_model_node src/moving_model.cpp)
-target_link_libraries(moving_model_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+### First project - setup_node
+#add_executable(setup_node src/setup.cpp)
+#target_link_libraries(setup_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+
+### Second project - leg_motion
+#add_executable(leg_motion_node src/leg_motion.cpp)
+#target_link_libraries(leg_motion_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+
+### Third project - robot motion
+#add_executable(moving_model_node src/moving_model.cpp)
+#target_link_libraries(moving_model_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 ## Forth project - base motion
 add_executable(base_motion_node src/base_motion.cpp)
@@ -76,24 +80,30 @@ target_link_libraries(raise_one_leg_node
                         ${PROJECT_NAME}
                         awesome_utils::awesome_utils)
 
-add_executable(cartesian_imp_controller_node src/cartesian_impedance_controller/cic_main.cpp)
-target_link_libraries(cartesian_imp_controller_node
-                        ${catkin_LIBRARIES}
-                        ${cartesian_interface_LIBRARIES}
-                        ${xbot2_LIBRARIES}
-                        ${PROJECT_NAME}
-                        awesome_utils::awesome_utils)
-
-
 install(TARGETS stability_node
                 vel_control_node
                 raise_one_leg_node
                 base_motion_node
-                cartesian_imp_controller_node
+                imp_controller
                 ${PROJECT_NAME}
 
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
- )
+)
+
+## Cartesian impedance controller plugin
+if(${xbot2_FOUND})
+    add_xbot2_plugin(impedance_controller_plugin
+        src/cartesian_impedance_controller/controllermanager.cpp)
+
+    target_link_libraries(impedance_controller_plugin
+        PRIVATE
+        imp_controller
+        xbot2::xbot2_ros_support)
+
+    install(TARGETS impedance_controller_plugin
+        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    )
+endif()
 

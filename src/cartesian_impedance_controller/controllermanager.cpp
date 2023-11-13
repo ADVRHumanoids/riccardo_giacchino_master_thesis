@@ -86,3 +86,4 @@ void ControllerManager::on_stop()
 
 }
 
+XBOT2_REGISTER_PLUGIN(ControllerManager, controllermanager)
