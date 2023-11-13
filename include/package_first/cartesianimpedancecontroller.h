@@ -148,7 +148,7 @@ private:
     Eigen::Vector6d _eddot, _edot, _e;
 
     Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
-    Eigen::Matrix6d _K, _D; // computed Stiffness and damping matrix
+    Eigen::Matrix6d _K, _D; // computed stiffness and damping matrix
 
     Eigen::Matrix6d _op_sp_inertia; // operational space inertial matrix, usually referred to as Λ
     Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
@@ -156,6 +156,8 @@ private:
     Eigen::Matrix6d _Q; // resulting matrix from the Cholesky decomposition of the operational space inertia, used in the computation of the damping matrix
 
     SignProcUtils::MovAvrgFilt _velocity_filter;   // Moving average filter of the velocity, used to compute the acceleration through numerical derivative
+
+    std::map<std::string, ControlMode> _ctrl_map;
 
     // ==============================================================================
     // Additional Functions

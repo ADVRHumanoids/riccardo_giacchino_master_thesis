@@ -25,6 +25,25 @@ bool CartesianImpedanceController::on_initialize(){
 
     //TODO: manage control mode
 
+    _robot->setControlMode(ControlMode::Idle());
+
+    auto control_joints = getParamOrThrow<std::vector<std::string>>("~control_joints");
+
+    jinfo("will control joints {} \n",
+          fmt::join(control_joints, ", "));
+
+    for(auto j : control_joints)
+    {
+        if(!_robot->hasJoint(j))
+        {
+            jerror("invalid joint '{}' \n", j);
+            return false;
+        }
+
+        _ctrl_map[j] = ControlMode::Effort();
+    }
+
+    setDefaultControlMode(_ctrl_map);
 
     return true;
 }
