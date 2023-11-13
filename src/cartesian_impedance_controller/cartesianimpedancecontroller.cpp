@@ -2,66 +2,36 @@
 
 
 // ==============================================================================
-// Real-time functions
+// Constructor and Destructor
 // ==============================================================================
 
-bool CartesianImpedanceController::on_initialize(){
+CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
+                                                           const string end_effector_link_name,
+                                                           const string root_link_name):
+    _model(model),
+    _end_effector_link(end_effector_link_name),
+    _root_link(root_link_name)
+{
 
-    //TODO: inizialize variable
-
+    // Inizialize all parameteres to zero
     _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
     _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
     _eddot = _edot = _e = Eigen::Vector6d::Zero();
 
+    // Initialize all matrix to identity matrix
     _J = _B_inv = _Q = Eigen::MatrixXd::Identity();
-
     _K_omega = _K = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
 
+    // Setting the derivation time
     _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
 
+    // Get the corresponding Jacobian
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
 
+    // Computing the number of joints in the system
     _n_joints = _J.rows();
 
-    //TODO: manage control mode
-
-    _robot->setControlMode(ControlMode::Idle());
-
-    auto control_joints = getParamOrThrow<std::vector<std::string>>("~control_joints");
-
-    jinfo("will control joints {} \n",
-          fmt::join(control_joints, ", "));
-
-    for(auto j : control_joints)
-    {
-        if(!_robot->hasJoint(j))
-        {
-            jerror("invalid joint '{}' \n", j);
-            return false;
-        }
-
-        _ctrl_map[j] = ControlMode::Effort();
-    }
-
-    setDefaultControlMode(_ctrl_map);
-
-    return true;
 }
-
-void CartesianImpedanceController::on_start(){
-    //TODO: implement
-    //set zero the impedance of the controller already implemented
-    //save in some way the state of the robot in this moment of time
-    //that has to be setted back again in the on_stop
-}
-
-void CartesianImpedanceController::on_stop()
-{
-    //TODO: implement
-    //set back again the state of the robot that you changed in the on_start funcition
-}
-
-
 
 // ==============================================================================
 // Additional Functions
@@ -70,13 +40,15 @@ void CartesianImpedanceController::on_stop()
 void CartesianImpedanceController::update_inertia()
 {
 
-    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-    _model->getInertiaInverse(_B_inv);
+    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);    // the Jacobian is configuration dependant, so it has to be updated every cycle
+    _model->getInertiaInverse(_B_inv);  // compute the inertia matrix B, also configuration dependant
 
+    // Λ = (J * B¯¹ * J)¯¹
     _op_sp_inertia = _J * _B_inv * _J.transpose();
 
     _op_sp_inertia = _op_sp_inertia.inverse();
 
+    // Cholesky decomposition
     try {
         cholesky_decomp(_op_sp_inertia);  // Store the resulting matrix in the variable _Q;
     } catch (const std::exception& e) {
@@ -132,7 +104,7 @@ void CartesianImpedanceController::compute_error()
 
 }
 
-Eigen::Vector6d CartesianImpedanceController::compute_force()
+Eigen::Vector6d CartesianImpedanceController::compute_torque()
 {
 
     update_inertia();
@@ -141,9 +113,22 @@ Eigen::Vector6d CartesianImpedanceController::compute_force()
     update_real_value();
     compute_error();
 
-    Eigen::Vector6d force;
+    Eigen::Vector6d force, torque;
 
     force = (_op_sp_inertia * _eddot) + (_D * _edot) + (_K * _e);
+
+
+    try {
+        // Check if the dimensions are compatible for matrix multiplication
+        if (_J.transpose().cols()!= force.rows())
+            throw std::runtime_error("Matrix dimensions are not compatible for multiplication in torque computation.");
+
+        torque = _J.transpose() * force;
+
+    } catch (const std::exception& e) {
+        std::cerr << "[ERROR]: " << e.what() << std::endl;
+        // Handle the exception (e.g., stop the execution or provide a default value for torque)
+    }
 
     return force;
 }
@@ -153,10 +138,9 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
     return matrix.array().sqrt();
 }
 
-
 void CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix)
 {
-
+    //WARNING: are you sure that this compute the cholesky decomposition? Maybe we have to compute it manually
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix);
 
     if (eigensolver.info() != Eigen::Success)
@@ -171,9 +155,9 @@ void CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix)
 // Setter and Getter
 // ==============================================================================
 
-void CartesianImpedanceController::set_stiffness(const Eigen::Matrix6d &new_K)
+void CartesianImpedanceController::set_stiffness(const Eigen::Vector6d &new_K)
 {
-    _K = new_K;
+    _K = new_K.asDiagonal();
     // cout << "[OK]: New diagonal stiffness matrix added\n" << _K << endl;
 }
 
