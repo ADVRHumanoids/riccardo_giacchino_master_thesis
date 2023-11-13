@@ -3,7 +3,6 @@
 bool ControllerManager::on_initialize()
 {
 
-    // TODO: set the stiffness of the controller for each leg
     // TODO: about the derivation time, how it works
 
     _model = ModelInterface::getModel(_robot->getConfigOptions());
@@ -14,7 +13,11 @@ bool ControllerManager::on_initialize()
 
     for (const string& link_name : _end_effector_link_names)
     {
-        _legs_controller.push_back(CartesianImpedanceController(_model,link_name));
+        _legs_controller.push_back(
+            CartesianImpedanceController(_model,
+                                         link_name,
+                                         "base_link",
+                                         _stiffness.asDiagonal()));
     }
 
     // Setting the control mode of each control joint to Effort
@@ -45,6 +48,16 @@ bool ControllerManager::on_initialize()
 void ControllerManager::on_start()
 {
 
+    _robot->sense();
+
+    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+
+    _robot->getStiffness(_stiff_initial_state);
+    _robot->getEffortReference(_effort_initial_state);
+
+    _robot->setStiffness(Eigen::VectorXd::Zero());
+    _robot->setEffortReference(Eigen::VectorXd::Zero());
+
 }
 
 void ControllerManager::run()
@@ -53,11 +66,23 @@ void ControllerManager::run()
 
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
 
+    Eigen::VectorXd effort = Eigen::VectorXd::Zero();
+
+    for (auto leg : _legs_controller){
+
+        leg.update_model(_model);
+        effort += leg.compute_torque();
+    }
+
+    _robot->setEffortReference(effort);
 
 }
 
 void ControllerManager::on_stop()
 {
+
+    _robot->setStiffness(_stiff_initial_state);
+    _robot->setEffortReference(_effort_initial_state);
 
 }
 

@@ -33,9 +33,42 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 
 }
 
+CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
+                                                           const string end_effector_link_name,
+                                                           const string root_link_name,
+                                                           Eigen::Matrix6d stiffness):
+    _model(model),
+    _end_effector_link(end_effector_link_name),
+    _root_link(root_link_name),
+    _K(stiffness)
+{
+    // Inizialize all parameteres to zero
+    _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
+    _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
+    _eddot = _edot = _e = Eigen::Vector6d::Zero();
+
+    // Initialize all matrix to identity matrix
+    _J = _B_inv = _Q = Eigen::MatrixXd::Identity();
+    _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
+
+    // Setting the derivation time
+    _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
+
+    // Get the corresponding Jacobian
+    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
+
+    // Computing the number of joints in the system
+    _n_joints = _J.rows();
+}
+
 // ==============================================================================
 // Additional Functions
 // ==============================================================================
+
+void CartesianImpedanceController::update_model(ModelInterface::Ptr model)
+{
+    _model = model;
+}
 
 void CartesianImpedanceController::update_inertia()
 {
@@ -104,7 +137,7 @@ void CartesianImpedanceController::compute_error()
 
 }
 
-Eigen::Vector6d CartesianImpedanceController::compute_torque()
+Eigen::VectorXd CartesianImpedanceController::compute_torque()
 {
 
     update_inertia();
@@ -113,7 +146,8 @@ Eigen::Vector6d CartesianImpedanceController::compute_torque()
     update_real_value();
     compute_error();
 
-    Eigen::Vector6d force, torque;
+    Eigen::Vector6d force;
+    Eigen::VectorXd torque;
 
     force = (_op_sp_inertia * _eddot) + (_D * _edot) + (_K * _e);
 
