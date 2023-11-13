@@ -43,7 +43,7 @@ public:
 
     CartesianImpedanceController(ModelInterface::Ptr model,
                                  const string end_effector_link_name,
-                                 const string root_link_name);
+                                 const string root_link_name = "base_link");
 
     ~CartesianImpedanceController();
 

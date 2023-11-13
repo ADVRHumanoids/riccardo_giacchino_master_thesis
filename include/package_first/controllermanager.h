@@ -1,11 +1,34 @@
 #ifndef CONTROLLERMANAGER_H
 #define CONTROLLERMANAGER_H
 
+#include <cartesianimpedancecontroller.h>
 
-class ControllerManager
+using namespace XBot;
+
+class ControllerManager : public ControlPlugin
 {
 public:
-    ControllerManager();
+
+    using ControlPlugin::ControlPlugin;
+
+    bool on_initialize() override;
+
+    void on_start() override;
+
+    void run() override;
+
+    void on_stop() override;
+
+private:
+
+    std::map<std::string, ControlMode> _ctrl_map;
+
+    ModelInterface::Ptr _model;
+
+    std::vector<CartesianImpedanceController> _legs_controller;
+
+    std::vector<string> _end_effector_link_names;
+
 };
 
 #endif // CONTROLLERMANAGER_H
