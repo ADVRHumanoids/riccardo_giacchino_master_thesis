@@ -33,6 +33,7 @@ private:
 
     Eigen::Vector6d _stiffness;
 
+    int _n_joints = 0;
 };
 
 #endif // CONTROLLERMANAGER_H

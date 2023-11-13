@@ -13,23 +13,24 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _root_link(root_link_name)
 {
 
+    // Get the corresponding Jacobian
+    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
+
+    // Computing the number of joints in the system
+    _n_joints = _J.rows();
+
     // Inizialize all parameteres to zero
     _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
     _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
     _eddot = _edot = _e = Eigen::Vector6d::Zero();
 
     // Initialize all matrix to identity matrix
-    _J = _B_inv = _Q = Eigen::MatrixXd::Identity();
+    _B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
+    _Q = Eigen::Matrix6d::Identity();
     _K_omega = _K = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
 
     // Setting the derivation time
     _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
-
-    // Get the corresponding Jacobian
-    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-
-    // Computing the number of joints in the system
-    _n_joints = _J.rows();
 
 }
 
@@ -42,23 +43,25 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _root_link(root_link_name),
     _K(stiffness)
 {
-    // Inizialize all parameteres to zero
-    _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
-    _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
-    _eddot = _edot = _e = Eigen::Vector6d::Zero();
-
-    // Initialize all matrix to identity matrix
-    _J = _B_inv = _Q = Eigen::MatrixXd::Identity();
-    _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
-
-    // Setting the derivation time
-    _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
 
     // Get the corresponding Jacobian
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
 
     // Computing the number of joints in the system
     _n_joints = _J.rows();
+
+    // Inizialize all parameteres to zero
+    _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
+    _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
+    _eddot = _edot = _e = Eigen::Vector6d::Zero();
+
+    // Initialize all matrix to identity matrix
+    _B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
+    _Q = Eigen::Matrix6d::Identity();
+    _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
+
+    // Setting the derivation time
+    _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
 }
 
 // ==============================================================================

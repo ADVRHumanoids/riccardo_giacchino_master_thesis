@@ -55,8 +55,10 @@ void ControllerManager::on_start()
     _robot->getStiffness(_stiff_initial_state);
     _robot->getEffortReference(_effort_initial_state);
 
-    _robot->setStiffness(Eigen::VectorXd::Zero());
-    _robot->setEffortReference(Eigen::VectorXd::Zero());
+    _n_joints = _stiff_initial_state.size();
+
+    _robot->setStiffness(Eigen::VectorXd::Zero(_n_joints));
+    _robot->setEffortReference(Eigen::VectorXd::Zero(_n_joints));
 
 }
 
@@ -66,7 +68,7 @@ void ControllerManager::run()
 
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
 
-    Eigen::VectorXd effort = Eigen::VectorXd::Zero();
+    Eigen::VectorXd effort = Eigen::VectorXd::Zero(_n_joints);
 
     for (auto leg : _legs_controller){
 

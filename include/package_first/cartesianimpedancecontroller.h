@@ -8,7 +8,6 @@
 #include <math.h>
 #include <chrono>
 
-#include <cartesian_interface/utils/RobotStatePublisher.h> // ROS related
 #include <cartesian_interface/CartesianInterfaceImpl.h> // For the solver
 #include <RobotInterfaceROS/ConfigFromParam.h>  // Model param config
 #include <XBotInterface/ModelInterface.h>   // Model generation
