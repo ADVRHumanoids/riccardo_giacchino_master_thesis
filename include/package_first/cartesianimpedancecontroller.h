@@ -49,7 +49,7 @@ public:
                                  const string root_link_name,
                                  Eigen::Matrix6d stiffness = Eigen::Matrix6d::Identity());
 
-    ~CartesianImpedanceController();
+    //~CartesianImpedanceController();
 
     // ==============================================================================
     // Additional Functions

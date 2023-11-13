@@ -94,15 +94,15 @@ install(TARGETS stability_node
 
 ## Cartesian impedance controller plugin
 if(${xbot2_FOUND})
-    add_xbot2_plugin(impedance_controller_plugin
+    add_xbot2_plugin(controllermanager
         src/cartesian_impedance_controller/controllermanager.cpp)
 
-    target_link_libraries(impedance_controller_plugin
+    target_link_libraries(controllermanager
         PRIVATE
         imp_controller
         xbot2::xbot2_ros_support)
 
-    install(TARGETS impedance_controller_plugin
+    install(TARGETS controllermanager
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     )
 endif()

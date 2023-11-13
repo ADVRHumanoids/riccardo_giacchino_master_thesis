@@ -8,7 +8,7 @@ bool ControllerManager::on_initialize()
     _model = ModelInterface::getModel(_robot->getConfigOptions());
 
     // TODO: set the name of the end effector and also find a way to set them in a better way
-    _end_effector_link_names = {"", "", "", ""};
+    _end_effector_link_names = {"wheel_1", "wheel_2", "wheel_3", "wheel_4"};
     _stiffness << 1,1,1,1,1,1;
 
     for (const string& link_name : _end_effector_link_names)
@@ -16,7 +16,7 @@ bool ControllerManager::on_initialize()
         _legs_controller.push_back(
             CartesianImpedanceController(_model,
                                          link_name,
-                                         "base_link",
+                                         "pelvis",
                                          _stiffness.asDiagonal()));
     }
 
@@ -77,6 +77,8 @@ void ControllerManager::run()
     }
 
     _robot->setEffortReference(effort);
+
+    _robot->move();
 
 }
 
