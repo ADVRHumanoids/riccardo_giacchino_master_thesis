@@ -40,14 +40,18 @@ public:
 
     CartesianImpedanceController();
 
-    CartesianImpedanceController(ModelInterface::Ptr model,
-                                 const string end_effector_link_name,
-                                 const string root_link_name = "base_link");
+//    CartesianImpedanceController(ModelInterface::Ptr model,
+//                                 const string end_effector_link_name,
+//                                 const string root_link_name = "base_link");
+
+//    CartesianImpedanceController(ModelInterface::Ptr model,
+//                                 const string end_effector_link_name,
+//                                 const string root_link_name,
+//                                 Eigen::Matrix6d stiffness = Eigen::Matrix6d::Identity());
 
     CartesianImpedanceController(ModelInterface::Ptr model,
-                                 const string end_effector_link_name,
-                                 const string root_link_name,
-                                 Eigen::Matrix6d stiffness = Eigen::Matrix6d::Identity());
+                                 RobotChain& leg,
+                                 Eigen::Matrix6d stiffness);
 
     //~CartesianImpedanceController();
 
@@ -108,12 +112,16 @@ private:
     // ==============================================================================
 
     double _dt; // sampling time
-    double _n_joints; // number of joints
+    double _n_joints = 6; // number of joints
 
     string _root_link = "base_link";    // name of the root link, base_link by default
     string _end_effector_link = ""; // name of the end effector link, empty string by default
 
     XBot::ModelInterface::Ptr _model;
+
+    RobotChain& _leg;
+
+    JointNameMap _ctrl_joint;
 
     // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link. By default equal to zero
     Eigen::Vector6d _xddot_ref, _xdot_ref, _x_ref;

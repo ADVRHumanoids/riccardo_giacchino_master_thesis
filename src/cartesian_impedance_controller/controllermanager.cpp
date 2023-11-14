@@ -45,8 +45,7 @@ bool ControllerManager::on_initialize()
 
             _legs_controller.push_back(
             CartesianImpedanceController(_model,
-                                         leg.getTipLinkName(),
-                                         leg.getBaseLinkName(),
+                                         leg,
                                           _stiffness.asDiagonal()));
 
             cout << "[INFO]: joints of chian " << chain << endl;
@@ -75,24 +74,6 @@ bool ControllerManager::on_initialize()
 
     }
 
-
-//    for (int i = 1; i <= _end_effector_link_names.size(); i++){
-
-//        RobotChain& leg = _robot->leg(i);
-
-//        _legs_controller.push_back(
-//            CartesianImpedanceController(_model,
-//                                         leg.getTipLinkName(),
-//                                         leg.getBaseLinkName(),
-//                                          _stiffness.asDiagonal()));
-
-//        for (string joint_name : leg.getJointNames()){
-//            _ctrl_map[joint_name] = ControlMode::Effort();
-
-//        }
-
-//    }
-
     setDefaultControlMode(_ctrl_map);
 
     return true;
@@ -110,11 +91,13 @@ void ControllerManager::on_start()
 
     _robot->getEffortReference(_effort_initial_state);
 
-    if (_stiff_initial_state.size() != _effort_initial_state.size())
-        cout << "[ERROR]: different size" << endl;
+    cout << "PROVA--------------------------------------------------------------------------------------------" << endl;
 
-    _robot->setStiffness(_stiff_tmp_state);
-    _robot->setEffortReference(_effort_tmp_state);
+//    if (_stiff_initial_state.size() != _effort_initial_state.size())
+//        cout << "[ERROR]: different size" << endl;
+
+//    _robot->setStiffness(_stiff_tmp_state);
+//    _robot->setEffortReference(_effort_tmp_state);
 
 }
 
@@ -123,13 +106,13 @@ void ControllerManager::run()
     _robot->sense();
 
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
-
-    Eigen::VectorXd effort = Eigen::VectorXd::Zero(_n_joints);
+    Eigen::VectorXd effort = Eigen::VectorXd::Zero(40);
 
     for (auto leg : _legs_controller){
 
         leg.update_model(_model);
-        effort += leg.compute_torque();
+        effort = leg.compute_torque();  //BUG: return a vetor of dimension 6 instead of 40, why???
+
     }
 
     _robot->setEffortReference(effort);
