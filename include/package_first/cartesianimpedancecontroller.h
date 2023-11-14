@@ -1,7 +1,9 @@
 #ifndef CARTESIANIMPEDANCECONTROLLER_H
 #define CARTESIANIMPEDANCECONTROLLER_H
 
-// -------------------------- INCLUDE -------------------------- //
+// ==============================================================================
+// Include
+// ==============================================================================
 
 #include <iostream>
 #include <thread>
@@ -18,6 +20,10 @@
 #include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
 #include <awesome_utils/awesome_utils/sign_proc_utils.hpp>
+
+// ==============================================================================
+// Namespace
+// ==============================================================================
 
 using namespace std;
 using namespace XBot;

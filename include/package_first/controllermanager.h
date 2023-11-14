@@ -34,6 +34,8 @@ private:
     JointNameMap _stiff_initial_state, _effort_initial_state;
     JointNameMap _stiff_tmp_state, _effort_tmp_state;
 
+    vector<string> joint_names;
+
     int _n_joints = 6;  // TODO: find a way to compute it automatically
 };
 

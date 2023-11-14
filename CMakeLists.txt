@@ -80,11 +80,7 @@ target_link_libraries(raise_one_leg_node
                         ${PROJECT_NAME}
                         awesome_utils::awesome_utils)
 
-install(TARGETS stability_node
-                vel_control_node
-                raise_one_leg_node
-                base_motion_node
-                imp_controller
+install(TARGETS imp_controller
                 ${PROJECT_NAME}
 
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
