@@ -62,6 +62,8 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 
     // Setting the derivation time
     _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
+
+    cout << "[OK]: impedance controller correctly constructed!" << endl;
 }
 
 // ==============================================================================

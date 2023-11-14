@@ -1,43 +1,97 @@
 #include "controllermanager.h"
 
+//NOTE: getParamOrThrow will take the the parameters from the YAML file, so they have to be defined in it
+
 bool ControllerManager::on_initialize()
 {
 
+    _robot->sense();
+
     // TODO: about the derivation time, how it works
 
+    // BUG: this function will always return TRUE
+
     _model = ModelInterface::getModel(_robot->getConfigOptions());
-
-    // TODO: set the name of the end effector and also find a way to set them in a better way
-    _end_effector_link_names = {"wheel_1", "wheel_2", "wheel_3", "wheel_4"};
-    _stiffness << 1,1,1,1,1,1;
-
-    for (const string& link_name : _end_effector_link_names)
-    {
-        _legs_controller.push_back(
-            CartesianImpedanceController(_model,
-                                         link_name,
-                                         "pelvis",
-                                         _stiffness.asDiagonal()));
-    }
 
     // Setting the control mode of each control joint to Effort
     _robot->setControlMode(ControlMode::Idle());
 
-    auto control_joints = getParamOrThrow<std::vector<std::string>>("~control_joints");
+    /* Read stiffness value from YAML file
+    auto stiffness = getParamOrThrow<vector<double>>("~stiffness");
 
-    jinfo("will control joints {} \n",
-          fmt::join(control_joints, ", "));
 
-    for(auto j : control_joints)
-    {
-        if(!_robot->hasJoint(j))
-        {
-            jerror("invalid joint '{}' \n", j);
+    if (stiffness.size() < 6){
+        cout << "[ERROR]: stiffness size is less than 6" << endl;
+        return false;
+    }
+    */
+    _stiffness << 1, 1, 1, 1, 1, 1;
+
+    auto leg_chains = getParamOrThrow<vector<string>>("~chain_names");
+
+    for (string chain : leg_chains){
+
+        // DEBUG: print the name of the chain
+        cout << "[INFO]: " << chain << endl;
+
+        if (!_robot->hasChain(chain)){
+
+            cout << "[ERROR]: robot does not have chain " << chain << endl;
             return false;
+
+        } else {
+
+            RobotChain& leg = _robot->chain(chain);
+
+            _legs_controller.push_back(
+            CartesianImpedanceController(_model,
+                                         leg.getTipLinkName(),
+                                         leg.getBaseLinkName(),
+                                          _stiffness.asDiagonal()));
+
+            cout << "[INFO]: joints of chian " << chain << endl;
+
+            for (string joint_name : leg.getJointNames()){
+
+                //DEBUG: print the joint names of the respective chain
+                cout << joint_name << endl;
+
+                if (!_robot->hasJoint(joint_name)){
+
+                    cout << "[ERROR]: robot does not have joint " << joint_name << endl;
+                    return false;
+
+                } else {
+
+                    _ctrl_map[joint_name] = ControlMode::Effort();
+                    _stiff_initial_state[joint_name] = _stiff_tmp_state[joint_name] = 0.0;
+                    _effort_initial_state[joint_name] = _effort_tmp_state[joint_name] = 0.0;
+
+                }
+
+            }
+
         }
 
-        _ctrl_map[j] = ControlMode::Effort();
     }
+
+
+//    for (int i = 1; i <= _end_effector_link_names.size(); i++){
+
+//        RobotChain& leg = _robot->leg(i);
+
+//        _legs_controller.push_back(
+//            CartesianImpedanceController(_model,
+//                                         leg.getTipLinkName(),
+//                                         leg.getBaseLinkName(),
+//                                          _stiffness.asDiagonal()));
+
+//        for (string joint_name : leg.getJointNames()){
+//            _ctrl_map[joint_name] = ControlMode::Effort();
+
+//        }
+
+//    }
 
     setDefaultControlMode(_ctrl_map);
 
@@ -53,12 +107,14 @@ void ControllerManager::on_start()
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
 
     _robot->getStiffness(_stiff_initial_state);
+
     _robot->getEffortReference(_effort_initial_state);
 
-    _n_joints = _stiff_initial_state.size();
+    if (_stiff_initial_state.size() != _effort_initial_state.size())
+        cout << "[ERROR]: different size" << endl;
 
-    _robot->setStiffness(Eigen::VectorXd::Zero(_n_joints));
-    _robot->setEffortReference(Eigen::VectorXd::Zero(_n_joints));
+    _robot->setStiffness(_stiff_tmp_state);
+    _robot->setEffortReference(_effort_tmp_state);
 
 }
 

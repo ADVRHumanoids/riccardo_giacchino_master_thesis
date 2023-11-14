@@ -25,15 +25,16 @@ private:
 
     ModelInterface::Ptr _model;
 
-    Eigen::VectorXd _stiff_initial_state, _effort_initial_state;
-
     std::vector<CartesianImpedanceController> _legs_controller;
 
     std::vector<string> _end_effector_link_names;
 
     Eigen::Vector6d _stiffness;
 
-    int _n_joints = 0;
+    JointNameMap _stiff_initial_state, _effort_initial_state;
+    JointNameMap _stiff_tmp_state, _effort_tmp_state;
+
+    int _n_joints = 6;  // TODO: find a way to compute it automatically
 };
 
 #endif // CONTROLLERMANAGER_H
