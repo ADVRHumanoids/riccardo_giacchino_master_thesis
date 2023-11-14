@@ -1,4 +1,5 @@
 #include "controllermanager.h"
+#include <xbot_msgs/JointCommand.h>
 
 //NOTE: getParamOrThrow will take the the parameters from the YAML file, so they have to be defined in it
 
@@ -9,8 +10,6 @@ bool ControllerManager::on_initialize()
 
     // TODO: about the derivation time, how it works
 
-    // BUG: this function will always return TRUE
-
     _model = ModelInterface::getModel(_robot->getConfigOptions());
 
     // Setting the control mode of each control joint to Effort
@@ -19,13 +18,12 @@ bool ControllerManager::on_initialize()
     /* Read stiffness value from YAML file
     auto stiffness = getParamOrThrow<vector<double>>("~stiffness");
 
-
     if (stiffness.size() < 6){
         cout << "[ERROR]: stiffness size is less than 6" << endl;
         return false;
     }
     */
-    _stiffness << 1, 1, 1, 1, 1, 1;
+    _stiffness << 200, 200, 200, 1000, 1000, 0;
 
     auto leg_chains = getParamOrThrow<vector<string>>("~chain_names");
 
@@ -74,6 +72,13 @@ bool ControllerManager::on_initialize()
 
     }
 
+
+
+//    // DEBUG
+//    for (const auto& pair : _stiff_tmp_state){
+//        cout << pair.first << " - " << pair.second << endl;
+//    }
+
     setDefaultControlMode(_ctrl_map);
 
     return true;
@@ -89,29 +94,31 @@ void ControllerManager::on_start()
 
     _robot->getStiffness(_stiff_initial_state);
 
-    _robot->getEffortReference(_effort_initial_state);
+    cout << "[INFO]: Cartesian impedance control is starting!" << endl;
 
-    cout << "PROVA--------------------------------------------------------------------------------------------" << endl;
+//    xbot_msgs::JointCommand msg;
+//    msg.name =
 
-//    if (_stiff_initial_state.size() != _effort_initial_state.size())
-//        cout << "[ERROR]: different size" << endl;
+//    advertise("/xbotcore/command")
 
-//    _robot->setStiffness(_stiff_tmp_state);
-//    _robot->setEffortReference(_effort_tmp_state);
+    if (!_robot->setStiffness(Eigen::VectorXd::Zero(40)))
+        cout << "[ERROR]: unable to set the stiffness value" << endl;
 
 }
 
 void ControllerManager::run()
 {
+
     _robot->sense();
 
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+
     Eigen::VectorXd effort = Eigen::VectorXd::Zero(40);
 
     for (auto leg : _legs_controller){
 
         leg.update_model(_model);
-        effort = leg.compute_torque();  //BUG: return a vetor of dimension 6 instead of 40, why???
+        effort += leg.compute_torque();
 
     }
 
@@ -127,6 +134,7 @@ void ControllerManager::on_stop()
     _robot->setStiffness(_stiff_initial_state);
     _robot->setEffortReference(_effort_initial_state);
 
+    cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
 }
 
 XBOT2_REGISTER_PLUGIN(ControllerManager, controllermanager)

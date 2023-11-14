@@ -114,7 +114,7 @@ private:
     double _dt; // sampling time
     double _n_joints = 6; // number of joints
 
-    string _root_link = "base_link";    // name of the root link, base_link by default
+    string _root_link = "pelvis";    // name of the root link, base_link by default
     string _end_effector_link = ""; // name of the end effector link, empty string by default
 
     XBot::ModelInterface::Ptr _model;

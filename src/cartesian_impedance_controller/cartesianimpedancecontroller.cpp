@@ -99,10 +99,6 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Filter
     _velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
 
-    for (const string& joint : _leg.getJointNames()){
-        _ctrl_joint[joint] = 0.0;
-    }
-
     cout << "[OK]: impedance controller correctly constructed!" << endl;
 }
 
