@@ -5,70 +5,6 @@
 // Constructor and Destructor
 // ==============================================================================
 
-//CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
-//                                                           const string end_effector_link_name,
-//                                                           const string root_link_name):
-//    _model(model),
-//    _end_effector_link(end_effector_link_name),
-//    _root_link(root_link_name)
-//{
-
-//    // Get the corresponding Jacobian
-//    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-
-//    // Computing the number of joints in the system
-//    _n_joints = _J.rows();
-
-//    // Inizialize all parameteres to zero
-//    _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
-//    _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
-//    _eddot = _edot = _e = Eigen::Vector6d::Zero();
-
-//    // Initialize all matrix to identity matrix
-//    _B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
-//    _Q = Eigen::Matrix6d::Identity();
-//    _K_omega = _K = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
-
-//    // Setting the derivation time
-//    _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
-
-//}
-
-//CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
-//                                                           const string end_effector_link_name,
-//                                                           const string root_link_name,
-//                                                           Eigen::Matrix6d stiffness = Eigen::Matrix6d::Identity()):
-//    _model(model),
-//    _end_effector_link(end_effector_link_name),
-//    _root_link(root_link_name),
-//    _K(stiffness)
-//{
-
-//    // Get the corresponding Jacobian
-//    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-
-//    // Computing the number of joints in the system
-//    _n_joints = _J.rows();
-
-//    // Inizialize all parameteres to zero
-//    _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
-//    _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
-//    _eddot = _edot = _e = Eigen::Vector6d::Zero();
-
-//    // Initialize all matrix to identity matrix
-//    _B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
-//    _Q = Eigen::Matrix6d::Identity();
-//    _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
-
-//    // Setting the derivation time
-//    _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
-
-//    // Filter
-//    _velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
-
-//    cout << "[OK]: impedance controller correctly constructed!" << endl;
-//}
-
 CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
                                                            RobotChain& leg,
                                                            Eigen::Matrix6d stiffness):
@@ -80,6 +16,9 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _root_link = _leg.getBaseLinkName();
 
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
+
+    if (_J.cols() != 46 || _J.rows() != 6)
+        cout << "[ERROR]: strange Jacobian dimension " << _J.rows() << " - " << _J.cols() << endl;
 
     _n_joints = _J.rows();
 
@@ -97,7 +36,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
 
     // Filter
-    _velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
+    //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
 
     cout << "[OK]: impedance controller correctly constructed!" << endl;
 }
@@ -205,17 +144,16 @@ void CartesianImpedanceController::update_real_value()
     _x_real << pose.translation(), pose.rotation().eulerAngles(0, 1, 2);
 
     // Get velocity
-    _xdot_prec = _xdot_real;
     _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
 
-    // Get acceleration
-    //_model->getRelativeAccelerationTwist(_end_effector_link, _root_link, _xddot_real);
-    Eigen::VectorXd vect = _xdot_real.head(6); // casting the data in a VectorXd object needed for the filter function
-    _velocity_filter.add_sample(vect);
-    _velocity_filter.get(vect);  // filtering velocity of the CoM
-    _xdot_real = vect.head(6);
+//    // Get acceleration
+//    //_model->getRelativeAccelerationTwist(_end_effector_link, _root_link, _xddot_real);
+//    Eigen::VectorXd vect = _xdot_real.head(6); // casting the data in a VectorXd object needed for the filter function
+//    _velocity_filter.add_sample(vect);
+//    _velocity_filter.get(vect);  // filtering velocity of the CoM
+//    _xdot_real = vect.head(6);
 
-    _xddot_real = (_xdot_real - _xdot_prec) / _dt;
+//    _xddot_real = (_xdot_real - _xdot_prec) / _dt;
 
 }
 
@@ -224,9 +162,11 @@ void CartesianImpedanceController::compute_error()
 
     _e = _x_real - _x_ref;  // Position error
 
+    cout << _e << "\n------" << endl;
+
     _edot = _xdot_real - _xdot_ref; // Velocity error
 
-    _eddot = _xddot_real - _xddot_ref; // Acceleration error
+    //_eddot = _xddot_real - _xddot_ref; // Acceleration error
 
 }
 
@@ -242,14 +182,13 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     Eigen::Vector6d force;
     Eigen::VectorXd torque;
 
-    // TODO: substitute try catch with assertions
     // Check matrix dimension compatibility
     try {
 
-        if(_op_sp_inertia.cols() != _eddot.rows()){
-            string msg = string("Cols of Λ ") + to_string(_Q.cols()) + string(", Rows of eddot ") + to_string(_D_zeta.rows());
-            throw std::runtime_error(msg);
-        }
+//        if(_op_sp_inertia.cols() != _eddot.rows()){
+//            string msg = string("Cols of Λ ") + to_string(_Q.cols()) + string(", Rows of eddot ") + to_string(_D_zeta.rows());
+//            throw std::runtime_error(msg);
+//        }
 
         if(_D.cols() != _edot.rows()){
             string msg = string("Cols of D ") + to_string(_D.cols()) + string(", Rows of edot ") + to_string(_edot.rows());
@@ -261,7 +200,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
             throw std::runtime_error(msg);
         }
 
-        force = (_op_sp_inertia * _eddot) + (_D * _edot) + (_K * _e);
+        force = (_D * _edot) + (_K * _e);
 
         if (_J.transpose().cols()!= force.rows())
             throw std::runtime_error("Matrix dimensions are not compatible for multiplication in torque computation.");
@@ -314,12 +253,16 @@ void CartesianImpedanceController::set_stiffness()
 
 }
 
-void CartesianImpedanceController::set_reference_value(Eigen::Vector6d& acc_ref, Eigen::Vector6d& vel_ref, Eigen::Vector6d& pos_ref)
+void CartesianImpedanceController::set_reference_value()
 {
-    _xddot_ref = acc_ref;
-    _xdot_ref = vel_ref;
-    _x_ref = pos_ref;
-    //cout << "[OK]: Set new reference value:\n" << _xddot_ref << endl << _xdot_ref << endl << _x_ref << endl;
+
+    Eigen::Affine3d pose;
+    _model->getPose(_end_effector_link, _root_link, pose);
+
+    _x_ref << pose.translation(), pose.rotation().eulerAngles(0, 1, 2);
+
+    _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
+
 }
 
 void CartesianImpedanceController::setEnd_effector_link(const string &newEnd_effector_link)

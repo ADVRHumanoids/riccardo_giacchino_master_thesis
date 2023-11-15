@@ -103,13 +103,14 @@ public:
      * @param vel_ref is the reference velocity value of the end effector
      * @param pos_ref is the reference position value of the end effector
      */
-    void set_reference_value(Eigen::Vector6d& acc_ref, Eigen::Vector6d& vel_ref, Eigen::Vector6d& pos_ref);
+    void set_reference_value();
 
     /**
      * @brief setEnd_effector_link set the name of the end effector link, empty string by default.
      * @param newEnd_effector_link the new value.
      */
     void setEnd_effector_link(const string &newEnd_effector_link);
+
 
 private:
 

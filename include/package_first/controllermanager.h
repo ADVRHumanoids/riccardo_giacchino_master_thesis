@@ -2,6 +2,8 @@
 #define CONTROLLERMANAGER_H
 
 #include <cartesianimpedancecontroller.h>
+#include <xbot_msgs/JointCommand.h>
+#include <xbot2/ros/ros_support.h>
 
 using namespace XBot;
 
@@ -25,14 +27,20 @@ private:
 
     ModelInterface::Ptr _model;
 
-    std::vector<CartesianImpedanceController> _legs_controller;
+    // ROS related
+    std::unique_ptr<RosSupport> _ros;
+    PublisherPtr<xbot_msgs::JointCommand> _pub;
+
+    //std::vector<CartesianImpedanceController> _legs_controller;
+
+    std::vector<std::unique_ptr<CartesianImpedanceController>> _legs_controller;
 
     std::vector<string> _end_effector_link_names;
 
     Eigen::Vector6d _stiffness;
 
-    JointNameMap _stiff_initial_state, _effort_initial_state;
-    JointNameMap _stiff_tmp_state, _effort_tmp_state;
+    JointNameMap _stiff_initial_state, _damp_initial_state;
+    JointNameMap _stiff_tmp_state, _damp_tmp_state;
 
     vector<string> joint_names;
 

@@ -55,30 +55,30 @@ target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_L
 #target_link_libraries(moving_model_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 ## Forth project - base motion
-add_executable(base_motion_node src/base_motion.cpp)
-target_link_libraries(base_motion_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+#add_executable(base_motion_node src/base_motion.cpp)
+#target_link_libraries(base_motion_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 ## Seventh project - PI controller for velocity
-add_executable(vel_control_node src/velocity_controller_node.cpp)
-target_link_libraries(vel_control_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES})
+#add_executable(vel_control_node src/velocity_controller_node.cpp)
+#target_link_libraries(vel_control_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES})
 
 ## Sixth project - COM position and projection
-add_executable(stability_node src/stability_node.cpp)
-target_link_libraries(stability_node
-                        ${catkin_LIBRARIES}
-                        ${cartesian_interface_LIBRARIES}
-                        ${xbot2_LIBRARIES}
-                        ${PROJECT_NAME}
-                        awesome_utils::awesome_utils)
+#add_executable(stability_node src/stability_node.cpp)
+#target_link_libraries(stability_node
+#                        ${catkin_LIBRARIES}
+#                        ${cartesian_interface_LIBRARIES}
+#                        ${xbot2_LIBRARIES}
+#                        ${PROJECT_NAME}
+#                        awesome_utils::awesome_utils)
 
 ## Seventh project - raise one leg of the robot
-add_executable(raise_one_leg_node src/raise_one_leg.cpp)
-target_link_libraries(raise_one_leg_node
-                        ${catkin_LIBRARIES}
-                        ${cartesian_interface_LIBRARIES}
-                        ${xbot2_LIBRARIES}
-                        ${PROJECT_NAME}
-                        awesome_utils::awesome_utils)
+#add_executable(raise_one_leg_node src/raise_one_leg.cpp)
+#target_link_libraries(raise_one_leg_node
+#                        ${catkin_LIBRARIES}
+#                        ${cartesian_interface_LIBRARIES}
+#                        ${xbot2_LIBRARIES}
+#                        ${PROJECT_NAME}
+#                        awesome_utils::awesome_utils)
 
 install(TARGETS imp_controller
                 ${PROJECT_NAME}
