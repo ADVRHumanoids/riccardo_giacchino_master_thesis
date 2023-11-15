@@ -108,7 +108,9 @@ void ControllerManager::run()
 
     }
 
-    //_robot->setEffortReference(effort);
+    _robot->setEffortReference(effort);
+
+    cout << effort << endl;
 
     _robot->setStiffness(_stiff_tmp_state);
     _robot->setDamping(_damp_tmp_state);

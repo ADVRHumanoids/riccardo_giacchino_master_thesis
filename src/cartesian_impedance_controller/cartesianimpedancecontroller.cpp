@@ -90,22 +90,15 @@ void CartesianImpedanceController::update_inertia()
 void CartesianImpedanceController::update_K_omega()
 {
     // Check matrix dimension compatibility
-    try {
-        if(_Q.cols() != _K_omega.rows()){
-            string msg = string("Cols of Q ") + to_string(_Q.cols()) + string(", Rows of K_omega ") + to_string(_K_omega.rows());
-            throw std::runtime_error(msg);
-        }
 
-        if(_K_omega.cols() != _Q.transpose().rows()){
-            string msg = string("Cols of K_omega ") + to_string(_K_omega.cols()) + string(", Rows of Q^T ") + to_string(_Q.transpose().rows());
-            throw std::runtime_error(msg);
-        }
+    if (_Q.size()!=_K.size())
+        cout << "[ERROR]: Matrix Q and K do not have compatible matrix" << endl;
 
-        _K = _Q * _K_omega * _Q.transpose();
+    _K_omega = _Q.transpose() * _K * _Q.transpose();
 
-    } catch (const std::exception& e) {
-        std::cerr << "[ERROR]: incompatible matrix dimension: " << e.what() << endl;
-    }
+    cout << _K << endl;
+
+
 }
 
 void CartesianImpedanceController::update_D()
@@ -161,8 +154,6 @@ void CartesianImpedanceController::compute_error()
 {
 
     _e = _x_real - _x_ref;  // Position error
-
-    cout << _e << "\n------" << endl;
 
     _edot = _xdot_real - _xdot_ref; // Velocity error
 
@@ -221,14 +212,18 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 
 void CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix)
 {
-    //WARNING: are you sure that this compute the cholesky decomposition? Maybe we have to compute it manually
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix);
 
-    if (eigensolver.info() != Eigen::Success)
-        throw std::runtime_error("Impossible the compute the Cholesky decomposition");
+    Eigen::LLT<Eigen::MatrixXd> cholesky_of_A(matrix);
 
-    // Get the eigenvectors in Q and eigenvalues in Lambda
-    _Q = eigensolver.eigenvectors();
+    // Check if the decomposition was successful
+    if(cholesky_of_A.info() == Eigen::Success)
+
+        _Q = cholesky_of_A.matrixL();
+
+    else
+
+        std::cerr << "[ERROR]: Cholesky decomposition failed!" << std::endl;
+
 
 }
 
