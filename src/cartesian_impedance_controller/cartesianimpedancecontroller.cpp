@@ -74,6 +74,8 @@ void CartesianImpedanceController::update_inertia()
 
         _op_sp_inertia = _op_sp_inertia.inverse();
 
+        cout << _op_sp_inertia << endl;
+
     } catch (const std::exception& e) {
         std::cerr << "[ERROR]: incompatible matrix dimension: " << e.what() << endl;
     }
@@ -94,10 +96,7 @@ void CartesianImpedanceController::update_K_omega()
     if (_Q.size()!=_K.size())
         cout << "[ERROR]: Matrix Q and K do not have compatible matrix" << endl;
 
-    _K_omega = _Q.transpose() * _K * _Q.transpose();
-
-    cout << _K << endl;
-
+    //_K_omega;
 
 }
 
@@ -210,20 +209,54 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
     return matrix.array().sqrt();
 }
 
-void CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix)
+bool CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& matrix) {
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver(matrix);
+    Eigen::VectorXd eigenvalues = eigen_solver.eigenvalues();
+
+    return eigenvalues.minCoeff() > 0; // check if all eigenvalues are positive
+
+}
+
+Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B)
 {
 
-    Eigen::LLT<Eigen::MatrixXd> cholesky_of_A(matrix);
+//    Eigen::LLT<Eigen::MatrixXd> cholesky_of_A(matrix);
 
-    // Check if the decomposition was successful
-    if(cholesky_of_A.info() == Eigen::Success)
+//    // Check if the decomposition was successful
+//    if(cholesky_of_A.info() == Eigen::Success)
 
-        _Q = cholesky_of_A.matrixL();
+//        _Q = cholesky_of_A.matrixL();
 
-    else
+//    else
 
-        std::cerr << "[ERROR]: Cholesky decomposition failed!" << std::endl;
+//        std::cerr << "[ERROR]: Cholesky decomposition failed!" << std::endl;
 
+    // Matrix A will be the stiffness _K
+    // Matrix B will be Lambda the operational space inertia matrix
+
+    if (!isPositiveDefinite(B))
+        std::cout << "[ERROR]: Matrix B is not positive definite!" << std::endl;
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_B(B);
+
+    Eigen::MatrixXd Phi_B = eigen_solver_B.eigenvectors();
+    Eigen::VectorXd lambda_B = eigen_solver_B.eigenvalues().array().sqrt().array() + 0.0001;
+
+    Eigen::MatrixXd Lambda_B_sqrt = lambda_B.asDiagonal();
+
+    Eigen::MatrixXd Phi_B_hat = Phi_B * Lambda_B_sqrt.inverse();
+
+    Eigen::MatrixXd A_hat = Phi_B_hat.transpose() * A * Phi_B_hat;
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_A(A_hat);
+
+    Eigen::MatrixXd Phi_A = eigen_solver_A.eigenvectors();
+
+    Eigen::MatrixXd Phi = Phi_B_hat * Phi_A;
+
+    _K_omega = eigen_solver_A.eigenvalues().asDiagonal();
+    _Q = Phi.inverse().transpose();
 
 }
 

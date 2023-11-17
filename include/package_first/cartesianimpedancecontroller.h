@@ -158,7 +158,7 @@ private:
      * @brief cholesky_decomp compute the Cholesky decomposition of the operational space inertia
      * in order to obtain the matrix Q used in the computation of stiffness (K) and damping (D)
      */
-    void cholesky_decomp(Eigen::Matrix6d matrix);
+    Eigen::Matrix6d cholesky_decomp(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
 
     /**
      * @brief matrix_sqrt compute the square root of each elements of the matrix
@@ -166,6 +166,13 @@ private:
      * @return the square root of the input matrix
      */
     Eigen::Matrix6d matrix_sqrt(Eigen::Matrix6d matrix);
+
+    /**
+     * @brief CartesianImpedanceController::isPositiveDefinite
+     * @param matrix
+     * @return
+     */
+    bool isPositiveDefinite(const Eigen::MatrixXd& matrix);
 
     /**
      * @brief Updates the operational space inertia matrix Λ and computes the Cholesky factor Q.
