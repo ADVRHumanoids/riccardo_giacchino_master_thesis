@@ -75,6 +75,7 @@ void CartesianImpedanceController::update_inertia()
         _op_sp_inertia = _op_sp_inertia.inverse();
 
         cout << _op_sp_inertia << endl;
+        cout << "--" << endl;
 
     } catch (const std::exception& e) {
         std::cerr << "[ERROR]: incompatible matrix dimension: " << e.what() << endl;
@@ -82,7 +83,7 @@ void CartesianImpedanceController::update_inertia()
 
     // Cholesky decomposition
     try {
-        cholesky_decomp(_op_sp_inertia);  // Store the resulting matrix in the variable _Q;
+        cholesky_decomp(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
     } catch (const std::exception& e) {
         std::cerr << "[ERROR]: " << e.what() << endl;
     }
@@ -221,17 +222,6 @@ bool CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& mat
 Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B)
 {
 
-//    Eigen::LLT<Eigen::MatrixXd> cholesky_of_A(matrix);
-
-//    // Check if the decomposition was successful
-//    if(cholesky_of_A.info() == Eigen::Success)
-
-//        _Q = cholesky_of_A.matrixL();
-
-//    else
-
-//        std::cerr << "[ERROR]: Cholesky decomposition failed!" << std::endl;
-
     // Matrix A will be the stiffness _K
     // Matrix B will be Lambda the operational space inertia matrix
 
@@ -253,10 +243,12 @@ Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::Matri
 
     Eigen::MatrixXd Phi_A = eigen_solver_A.eigenvectors();
 
-    Eigen::MatrixXd Phi = Phi_B_hat * Phi_A;
+    Eigen::MatrixXd Phi = Phi_B_hat * Phi_A;    // What i find here is X = (Q^T)^-1, I need to know Q = (X^-1)^T
 
     _K_omega = eigen_solver_A.eigenvalues().asDiagonal();
     _Q = Phi.inverse().transpose();
+
+    return _Q;
 
 }
 

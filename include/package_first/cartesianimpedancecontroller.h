@@ -168,7 +168,7 @@ private:
     Eigen::Matrix6d matrix_sqrt(Eigen::Matrix6d matrix);
 
     /**
-     * @brief CartesianImpedanceController::isPositiveDefinite
+     * @brief isPositiveDefinite
      * @param matrix
      * @return
      */
