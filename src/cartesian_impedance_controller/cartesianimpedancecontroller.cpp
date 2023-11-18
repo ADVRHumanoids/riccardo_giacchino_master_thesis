@@ -74,8 +74,8 @@ void CartesianImpedanceController::update_inertia()
 
         _op_sp_inertia = _op_sp_inertia.inverse();
 
-        cout << _op_sp_inertia << endl;
-        cout << "--" << endl;
+//        cout << _op_sp_inertia << endl;
+//        cout << "--" << endl;
 
     } catch (const std::exception& e) {
         std::cerr << "[ERROR]: incompatible matrix dimension: " << e.what() << endl;
@@ -90,41 +90,14 @@ void CartesianImpedanceController::update_inertia()
 
 }
 
-void CartesianImpedanceController::update_K_omega()
-{
-    // Check matrix dimension compatibility
-
-    if (_Q.size()!=_K.size())
-        cout << "[ERROR]: Matrix Q and K do not have compatible matrix" << endl;
-
-    //_K_omega;
-
-}
-
 void CartesianImpedanceController::update_D()
 {
-    // Check matrix dimension compatibility
-    try {
-        if(_Q.cols() != _D_zeta.rows()){
-            string msg = string("Cols of Q ") + to_string(_Q.cols()) + string(", Rows of D_zeta ") + to_string(_D_zeta.rows());
-            throw std::runtime_error(msg);
-        }
 
-        if(_D_zeta.cols() != _K_omega.rows()){
-            string msg = string("Cols of D_zeta ") + to_string(_D_zeta.cols()) + string(", Rows of K_omega ") + to_string(_K_omega.rows());
-            throw std::runtime_error(msg);
-        }
+    _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
 
-        if(_K_omega.cols() != _Q.transpose().rows()){
-            string msg = string("Cols of K_omega ") + to_string(_K_omega.cols()) + string(", Rows of Q^T ") + to_string(_Q.transpose().rows());
-            throw std::runtime_error(msg);
-        }
+//    cout << _D << endl;
+//    cout << "------" << endl;
 
-        _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
-
-    } catch (const std::exception& e) {
-        std::cerr << "[ERROR]: incompatible matrix dimension: " << e.what() << endl;
-    }
 }
 
 void CartesianImpedanceController::update_real_value()
@@ -165,49 +138,29 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 {
 
     update_inertia();
-    update_K_omega();
     update_D();
     update_real_value();
     compute_error();
 
+    // TODO: create private variable and inizialize them in the constructor
     Eigen::Vector6d force;
     Eigen::VectorXd torque;
 
-    // Check matrix dimension compatibility
-    try {
+    force = (_D * _edot) + (_K * _e);
 
-//        if(_op_sp_inertia.cols() != _eddot.rows()){
-//            string msg = string("Cols of Λ ") + to_string(_Q.cols()) + string(", Rows of eddot ") + to_string(_D_zeta.rows());
-//            throw std::runtime_error(msg);
-//        }
-
-        if(_D.cols() != _edot.rows()){
-            string msg = string("Cols of D ") + to_string(_D.cols()) + string(", Rows of edot ") + to_string(_edot.rows());
-            throw std::runtime_error(msg);
-        }
-
-        if(_K.cols() != _e.rows()){
-            string msg = string("Cols of K ") + to_string(_K.cols()) + string(", Rows of e ") + to_string(_e.rows());
-            throw std::runtime_error(msg);
-        }
-
-        force = (_D * _edot) + (_K * _e);
-
-        if (_J.transpose().cols()!= force.rows())
-            throw std::runtime_error("Matrix dimensions are not compatible for multiplication in torque computation.");
-
-        torque = _J.transpose() * force;
-
-    } catch (const std::exception& e) {
-        std::cerr << "[ERROR]: incompatible matrix dimension: " << e.what() << endl;
-    }
+    torque = _J.transpose() * force;
 
     return torque.tail(40);
 }
 
 Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix)
 {
-    return matrix.array().sqrt();
+
+    Eigen::Vector6d diag = matrix.diagonal();
+    diag = (diag.array() + 0.01).cwiseSqrt();
+
+    return diag.asDiagonal();
+
 }
 
 bool CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& matrix) {
@@ -221,6 +174,8 @@ bool CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& mat
 
 Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B)
 {
+
+    //TODO: create private variable and inizialize them in the constructor
 
     // Matrix A will be the stiffness _K
     // Matrix B will be Lambda the operational space inertia matrix
@@ -247,6 +202,10 @@ Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::Matri
 
     _K_omega = eigen_solver_A.eigenvalues().asDiagonal();
     _Q = Phi.inverse().transpose();
+
+    //cout << _K_omega << endl;
+    //cout << _Q * _Q.transpose() << endl;
+    //cout << "=====" << endl;
 
     return _Q;
 
