@@ -19,7 +19,7 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 200, 200, 200, 1000, 1000, 0;
+    _stiffness << 100, 100, 100, 500, 500, 0.001;
 
     auto leg_chains = getParamOrThrow<vector<string>>("~chain_names");
 
@@ -110,7 +110,7 @@ void ControllerManager::run()
 
     //_robot->setEffortReference(effort);
 
-    //cout << effort.head(1) << endl;
+    //cout << effort << endl;
 
     _robot->setStiffness(_stiff_tmp_state);
     _robot->setDamping(_damp_tmp_state);

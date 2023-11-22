@@ -32,13 +32,21 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _Q = Eigen::Matrix6d::Identity();
     _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
 
+    _D_zeta(5,5) = 0.001;
+
     // Setting the derivation time
     _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
 
     // Filter
     //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
 
-    cout << "[OK]: impedance controller correctly constructed!" << endl;
+    cout << "[OK]: impedance controller for " << _leg.getChainName() << " correctly constructed!" << endl;
+    cout << "Configuration parameters:" << endl;
+    cout << "Root link: " << _root_link << endl << "Base link: " << _end_effector_link << endl;
+    cout << "Stiffness\n" << _K << endl;
+    cout << "Damping\n" << _D_zeta << endl;
+    cout << "==================" << endl;
+
 }
 
 // ==============================================================================
@@ -56,38 +64,15 @@ void CartesianImpedanceController::update_inertia()
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);    // the Jacobian is configuration dependant, so it has to be updated every cycle
     _model->getInertiaInverse(_B_inv);  // compute the inertia matrix B, also configuration dependant
 
-    // Check matrix dimension compatibility
-    try {
+    // Λ = (J * B¯¹ * J^T)¯¹
+    _op_sp_inertia = _J * _B_inv * _J.transpose();
 
-        if(_J.cols() != _B_inv.rows()){
-            string msg = string("Cols of J ") + to_string(_J.cols()) + string(", Rows of B_inv ") + to_string(_B_inv.rows());
-            throw std::runtime_error(msg);
-        }
+    _op_sp_inertia = _op_sp_inertia.inverse();
 
-        if(_B_inv.cols() != _J.transpose().rows()){
-            string msg = string("Cols of B_inv ") + to_string(_B_inv.cols()) + string(", Rows of J^T ") + to_string(_J.transpose().rows());
-            throw std::runtime_error(msg);
-        }
+//    cout << _leg.getChainName() << endl;
+//    cout << _op_sp_inertia << endl;
 
-        // Λ = (J * B¯¹ * J)¯¹
-        _op_sp_inertia = _J * _B_inv * _J.transpose();
-
-        _op_sp_inertia = _op_sp_inertia.inverse();
-
-//        cout << _op_sp_inertia << endl;
-//        cout << "--" << endl;
-
-    } catch (const std::exception& e) {
-        std::cerr << "[ERROR]: incompatible matrix dimension: " << e.what() << endl;
-    }
-
-    // Cholesky decomposition
-    try {
-        cholesky_decomp(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
-    } catch (const std::exception& e) {
-        std::cerr << "[ERROR]: " << e.what() << endl;
-    }
-
+    cholesky_decomp(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
 }
 
 void CartesianImpedanceController::update_D()
@@ -95,6 +80,7 @@ void CartesianImpedanceController::update_D()
 
     _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
 
+//    cout << _leg.getChainName() << endl;
 //    cout << _D << endl;
 //    cout << "------" << endl;
 
@@ -132,6 +118,10 @@ void CartesianImpedanceController::compute_error()
 
     //_eddot = _xddot_real - _xddot_ref; // Acceleration error
 
+//    cout << _leg.getChainName() << endl;
+//    cout << "Pos error: " << _e << endl;
+//    cout << "Vel error: " << _edot << endl;
+
 }
 
 Eigen::VectorXd CartesianImpedanceController::compute_torque()
@@ -148,7 +138,10 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 
     force = (_D * _edot) + (_K * _e);
 
+
     torque = _J.transpose() * force;
+    cout << _leg.getChainName() << endl;
+    cout << torque << endl;
 
     return torque.tail(40);
 }
@@ -203,8 +196,9 @@ Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::Matri
     _K_omega = eigen_solver_A.eigenvalues().asDiagonal();
     _Q = Phi.inverse().transpose();
 
-    //cout << _K_omega << endl;
-    //cout << _Q * _Q.transpose() << endl;
+//    cout << _leg.getChainName() << endl;
+//    cout << _K_omega << endl;
+//    cout << _Q << endl;
     //cout << "=====" << endl;
 
     return _Q;
