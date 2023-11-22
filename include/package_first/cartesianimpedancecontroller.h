@@ -56,8 +56,8 @@ public:
 //                                 Eigen::Matrix6d stiffness = Eigen::Matrix6d::Identity());
 
     CartesianImpedanceController(ModelInterface::Ptr model,
-                                 RobotChain& leg,
-                                 Eigen::Matrix6d stiffness);
+                                 Eigen::Matrix6d stiffness,
+                                 const string end_effector);
 
     //~CartesianImpedanceController();
 
@@ -126,7 +126,7 @@ private:
 
     XBot::ModelInterface::Ptr _model;
 
-    RobotChain& _leg;
+    //RobotChain& _leg;
 
     JointNameMap _ctrl_joint;
 

@@ -6,19 +6,18 @@
 // ==============================================================================
 
 CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
-                                                           RobotChain& leg,
-                                                           Eigen::Matrix6d stiffness):
+                                                           Eigen::Matrix6d stiffness,
+                                                           const string end_effector):
     _model(model),
-    _leg(leg),
-    _K(stiffness)
+    _K(stiffness),
+    _end_effector_link(end_effector)
 {
-    _end_effector_link = _leg.getTipLinkName();
-    _root_link = _leg.getBaseLinkName();
+
+//    _end_effector_link = _leg.getTipLinkName();
+//    _root_link = _leg.getBaseLinkName();
 
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-
-    if (_J.cols() != 46 || _J.rows() != 6)
-        cout << "[ERROR]: strange Jacobian dimension " << _J.rows() << " - " << _J.cols() << endl;
+    _model->getInertiaInverse(_B_inv);
 
     _n_joints = _J.rows();
 
@@ -28,11 +27,9 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _eddot = _edot = _e = Eigen::Vector6d::Zero();
 
     // Initialize all matrix to identity matrix
-    _B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
+    //_B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
     _Q = Eigen::Matrix6d::Identity();
     _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
-
-    _D_zeta(5,5) = 0.001;
 
     // Setting the derivation time
     _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
@@ -40,11 +37,13 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Filter
     //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
 
-    cout << "[OK]: impedance controller for " << _leg.getChainName() << " correctly constructed!" << endl;
+   //cout << "[OK]: impedance controller for " << _leg.getChainName() << " correctly constructed!" << endl;
     cout << "Configuration parameters:" << endl;
-    cout << "Root link: " << _root_link << endl << "Base link: " << _end_effector_link << endl;
+    cout << "Root link: " << _root_link << endl << "End effector link: " << _end_effector_link << endl;
     cout << "Stiffness\n" << _K << endl;
     cout << "Damping\n" << _D_zeta << endl;
+    //cout << "Joint space inertial matrix\n" << _B_inv << endl;
+    cout << "Jacobian transpose:\n" << _J.transpose() << endl;
     cout << "==================" << endl;
 
 }
@@ -67,10 +66,12 @@ void CartesianImpedanceController::update_inertia()
     // Λ = (J * B¯¹ * J^T)¯¹
     _op_sp_inertia = _J * _B_inv * _J.transpose();
 
+    if(!isPositiveDefinite(_op_sp_inertia))
+        cout << "[ERROR]: lambda is not positive definite" << endl;
+
     _op_sp_inertia = _op_sp_inertia.inverse();
 
-//    cout << _leg.getChainName() << endl;
-//    cout << _op_sp_inertia << endl;
+    cout << _op_sp_inertia << "\n----------------------" << endl;
 
     cholesky_decomp(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
 }
@@ -79,6 +80,9 @@ void CartesianImpedanceController::update_D()
 {
 
     _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+
+    if (!isPositiveDefinite(_D))
+        std::cout << "[ERROR]: Matrix D is not positive definite!" << std::endl;
 
 //    cout << _leg.getChainName() << endl;
 //    cout << _D << endl;
@@ -119,8 +123,8 @@ void CartesianImpedanceController::compute_error()
     //_eddot = _xddot_real - _xddot_ref; // Acceleration error
 
 //    cout << _leg.getChainName() << endl;
-//    cout << "Pos error: " << _e << endl;
-//    cout << "Vel error: " << _edot << endl;
+//    cout << "Pos error:\n" << _e << endl;
+//    cout << "Vel error:\n" << _edot << endl;
 
 }
 
@@ -138,10 +142,11 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 
     force = (_D * _edot) + (_K * _e);
 
+//    cout << _leg.getChainName() << endl;
+//    cout << force << endl;
 
     torque = _J.transpose() * force;
-    cout << _leg.getChainName() << endl;
-    cout << torque << endl;
+//    cout << torque.transpose() << endl;
 
     return torque.tail(40);
 }
@@ -174,7 +179,7 @@ Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::Matri
     // Matrix B will be Lambda the operational space inertia matrix
 
     if (!isPositiveDefinite(B))
-        std::cout << "[ERROR]: Matrix B is not positive definite!" << std::endl;
+        std::cout << "[ERROR]: Matrix Λ is not positive definite!" << std::endl;
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_B(B);
 

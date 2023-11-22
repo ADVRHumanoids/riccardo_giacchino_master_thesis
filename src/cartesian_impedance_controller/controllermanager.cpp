@@ -11,6 +11,10 @@ bool ControllerManager::on_initialize()
 
     _model = ModelInterface::getModel(_robot->getConfigOptions());
 
+    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+
+    _model->update();
+
     /* Read stiffness value from YAML file
     auto stiffness = getParamOrThrow<vector<double>>("~stiffness");
 
@@ -19,9 +23,13 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 100, 100, 100, 500, 500, 0.001;
+    _stiffness << 1000, 1000, 1000, 10000, 10000, 10000;
+
+    vector<string> cont = {"contact_1", "contact_2", "contact_3", "contact_4"};
 
     auto leg_chains = getParamOrThrow<vector<string>>("~chain_names");
+
+    int i = 0;
 
     for (string chain : leg_chains){
 
@@ -36,10 +44,9 @@ bool ControllerManager::on_initialize()
 
             _legs_controller.push_back(
                 std::make_unique<CartesianImpedanceController>(_model,
-                                                               leg,
-                                                               _stiffness.asDiagonal()));
-
-            //cout << "[INFO]: joints of chian " << chain << endl;
+                                                               _stiffness.asDiagonal(),
+                                                               cont[i]));
+            i++;
 
             for (string joint_name : leg.getJointNames()){
 
@@ -61,9 +68,6 @@ bool ControllerManager::on_initialize()
         }
 
     }
-
-    setDefaultControlMode(_ctrl_map);
-
 
     return true;
 
@@ -103,12 +107,11 @@ void ControllerManager::run()
 
     for (auto& leg : _legs_controller){
 
-        leg->update_model(_model);
         effort += leg->compute_torque();
 
     }
 
-    //_robot->setEffortReference(effort);
+    _robot->setEffortReference(effort);
 
     //cout << effort << endl;
 
