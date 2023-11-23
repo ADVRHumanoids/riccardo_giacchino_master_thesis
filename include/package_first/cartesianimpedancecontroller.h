@@ -121,7 +121,7 @@ private:
     double _dt; // sampling time
     double _n_joints = 6; // number of joints
 
-    string _root_link = "pelvis";    // name of the root link, base_link by default
+    string _root_link = "base_link";    // name of the root link, base_link by default
     string _end_effector_link = ""; // name of the end effector link, empty string by default
 
     XBot::ModelInterface::Ptr _model;
@@ -140,13 +140,22 @@ private:
     // Error between the actual and reference values
     Eigen::Vector6d _eddot, _edot, _e;
 
+    // Cartesian Controller
     Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
     Eigen::Matrix6d _K, _D; // computed stiffness and damping matrix
 
+    // Generic Matrix
     Eigen::Matrix6d _op_sp_inertia; // operational space inertial matrix, usually referred to as Λ
     Eigen::MatrixXd _J; // Jacobian matrix between the root link and the end effector
     Eigen::MatrixXd _B_inv; // inertia matrix in joint space
     Eigen::Matrix6d _Q; // resulting matrix from the Cholesky decomposition of the operational space inertia, used in the computation of the damping matrix
+
+    //SVD decomposition
+    Eigen::MatrixXd _U;
+    Eigen::MatrixXd _V;
+    Eigen::VectorXd _S = Eigen::VectorXd(6);
+    Eigen::VectorXd _S_pseudo_inverse = Eigen::VectorXd(6);
+    double _rho = 0.001;
 
     SignProcUtils::MovAvrgFilt _velocity_filter;   // Moving average filter of the velocity, used to compute the acceleration through numerical derivative
 
@@ -172,7 +181,7 @@ private:
      * @param matrix
      * @return
      */
-    bool isPositiveDefinite(const Eigen::MatrixXd& matrix);
+    void isPositiveDefinite(const Eigen::MatrixXd& matrix);
 
     /**
      * @brief Updates the operational space inertia matrix Λ and computes the Cholesky factor Q.
@@ -208,6 +217,18 @@ private:
      * end-effector.
      */
     void compute_error();
+
+    /**
+     * @brief svd_inverse compute the inverse of a matrix using SVD decomposition
+     *
+     * In this function the input matrix is singular (so not full rank), so it is not invertible. Therefore is possible
+     * to use the dirty & quick method of the inverse using the SVD
+     * @param matrix that has to be inverted
+     * @return the inverted matrix using the explained method
+     */
+    Eigen::Matrix6d  svd_inverse(Eigen::Matrix6d matrix);
+
+    double f(double x);
 
 };
 

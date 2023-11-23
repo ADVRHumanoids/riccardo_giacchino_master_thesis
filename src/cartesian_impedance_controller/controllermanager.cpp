@@ -23,7 +23,7 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 1000, 1000, 1000, 10000, 10000, 10000;
+    _stiffness << 1000, 1000, 1000, 1000, 1000, 1000;
 
     vector<string> cont = {"contact_1", "contact_2", "contact_3", "contact_4"};
 
@@ -59,8 +59,8 @@ bool ControllerManager::on_initialize()
 
                     joint_names.push_back(joint_name);
                     _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
-                    _stiff_tmp_state[joint_name] = 100.0;
-                    _damp_tmp_state[joint_name] = 10.0;
+                    _stiff_tmp_state[joint_name] = 500.0;
+                    _damp_tmp_state[joint_name] = 50.0;
                 }
 
             }
@@ -68,6 +68,8 @@ bool ControllerManager::on_initialize()
         }
 
     }
+
+    setDefaultControlMode(_ctrl_map);
 
     return true;
 
@@ -111,9 +113,10 @@ void ControllerManager::run()
 
     }
 
+    //cout << effort << endl;
+
     _robot->setEffortReference(effort);
 
-    //cout << effort << endl;
 
     _robot->setStiffness(_stiff_tmp_state);
     _robot->setDamping(_damp_tmp_state);

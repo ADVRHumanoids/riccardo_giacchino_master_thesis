@@ -37,13 +37,14 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Filter
     //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
 
-   //cout << "[OK]: impedance controller for " << _leg.getChainName() << " correctly constructed!" << endl;
+    //NOTE: Debug print
+    //cout << "[OK]: impedance controller for " << _leg.getChainName() << " correctly constructed!" << endl;
     cout << "Configuration parameters:" << endl;
     cout << "Root link: " << _root_link << endl << "End effector link: " << _end_effector_link << endl;
     cout << "Stiffness\n" << _K << endl;
     cout << "Damping\n" << _D_zeta << endl;
     //cout << "Joint space inertial matrix\n" << _B_inv << endl;
-    cout << "Jacobian transpose:\n" << _J.transpose() << endl;
+    //cout << "Jacobian transpose:\n" << _J.transpose() << endl;    //it is correct, good job guys
     cout << "==================" << endl;
 
 }
@@ -63,16 +64,26 @@ void CartesianImpedanceController::update_inertia()
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);    // the Jacobian is configuration dependant, so it has to be updated every cycle
     _model->getInertiaInverse(_B_inv);  // compute the inertia matrix B, also configuration dependant
 
+    cout << _end_effector_link << endl;
+
+    // NOTE: Debug print
+    //cout << _J.transpose() << "\n----------------------" << endl;
+
     // Λ = (J * B¯¹ * J^T)¯¹
     _op_sp_inertia = _J * _B_inv * _J.transpose();
 
-    if(!isPositiveDefinite(_op_sp_inertia))
-        cout << "[ERROR]: lambda is not positive definite" << endl;
+    //isPositiveDefinite(_op_sp_inertia);
 
-    _op_sp_inertia = _op_sp_inertia.inverse();
+    _op_sp_inertia = svd_inverse(_op_sp_inertia);
 
-    cout << _op_sp_inertia << "\n----------------------" << endl;
+//    cout << "Lambda:\n" << _op_sp_inertia << endl;
+//    cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
+    //cout << _op_sp_inertia << "\n----------" << endl;
 
+    // WARNING
+    //_op_sp_inertia = _op_sp_inertia.inverse();
+
+    // WARNING
     cholesky_decomp(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
 }
 
@@ -81,9 +92,9 @@ void CartesianImpedanceController::update_D()
 
     _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
 
-    if (!isPositiveDefinite(_D))
-        std::cout << "[ERROR]: Matrix D is not positive definite!" << std::endl;
+    isPositiveDefinite(_D);
 
+    // NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
 //    cout << _D << endl;
 //    cout << "------" << endl;
@@ -122,9 +133,10 @@ void CartesianImpedanceController::compute_error()
 
     //_eddot = _xddot_real - _xddot_ref; // Acceleration error
 
+    //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-//    cout << "Pos error:\n" << _e << endl;
-//    cout << "Vel error:\n" << _edot << endl;
+    cout << "Pos error:\n" << _e << endl;
+    cout << "Vel error:\n" << _edot << endl;
 
 }
 
@@ -132,7 +144,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 {
 
     update_inertia();
-    update_D();
+    update_D();   //WARNING
     update_real_value();
     compute_error();
 
@@ -142,10 +154,13 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 
     force = (_D * _edot) + (_K * _e);
 
+    //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-//    cout << force << endl;
+    cout << "Force:\n" << force << endl;
 
     torque = _J.transpose() * force;
+
+    //NOTE: Debug print
 //    cout << torque.transpose() << endl;
 
     return torque.tail(40);
@@ -161,12 +176,21 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 
 }
 
-bool CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& matrix) {
+void CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& matrix) {
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver(matrix);
     Eigen::VectorXd eigenvalues = eigen_solver.eigenvalues();
 
-    return eigenvalues.minCoeff() > 0; // check if all eigenvalues are positive
+    if (eigenvalues.minCoeff() > 0){
+        cout << "Is positive definite:\n" << matrix << endl;
+    }
+    else if (eigenvalues.minCoeff() >= 0) {
+        cout << "Is positive semidefinite:\n" << matrix << endl;
+
+    }else if (eigenvalues.minCoeff() < 0) {
+        cout << "Not positive definite or semidefinite: " << eigenvalues.minCoeff() << "\n" << matrix << endl;
+
+    }
 
 }
 
@@ -178,8 +202,7 @@ Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::Matri
     // Matrix A will be the stiffness _K
     // Matrix B will be Lambda the operational space inertia matrix
 
-    if (!isPositiveDefinite(B))
-        std::cout << "[ERROR]: Matrix Λ is not positive definite!" << std::endl;
+    //isPositiveDefinite(B)
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_B(B);
 
@@ -201,12 +224,46 @@ Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::Matri
     _K_omega = eigen_solver_A.eigenvalues().asDiagonal();
     _Q = Phi.inverse().transpose();
 
+    //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-//    cout << _K_omega << endl;
-//    cout << _Q << endl;
-    //cout << "=====" << endl;
+    cout << _K_omega << endl;
+    cout << _Q << endl;
+    cout << "=====" << endl;
 
     return _Q;
+
+}
+
+Eigen::Matrix6d CartesianImpedanceController::svd_inverse(Eigen::Matrix6d matrix){
+
+    // Compute the SVD decomposition -> A = USV^T
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+    _U = svd.matrixU(); // Left singular vectors
+    _V = svd.matrixV(); // Right singular vectors
+    _S = svd.singularValues(); // Singular values matrix
+
+    // NOTE: Debug print
+//    cout << "Singular values original:\n" << _S.transpose() << endl;
+//    cout << "U:\n" << _U << endl;
+//    cout << "V:\n" << _V << endl;
+
+
+    for (int i = 0; i < _S.rows(); i++){
+
+        _S_pseudo_inverse(i) = f(_S(i));
+
+    }
+
+    //NOTE: Debug print
+//    cout << "Singular values modified:\n" << _S_pseudo_inverse.transpose() << endl;
+
+    return _U * _S_pseudo_inverse.asDiagonal() * _U.transpose();
+}
+
+double CartesianImpedanceController::f(double x){
+
+    return (x+0.01)/(_rho + pow(x, 2));
 
 }
 
