@@ -22,9 +22,8 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _n_joints = _J.rows();
 
     // Inizialize all parameteres to zero
-    _xddot_ref = _xdot_ref = _x_ref = Eigen::Vector6d::Zero();
-    _xddot_real = _xdot_real = _xdot_prec = _x_real = Eigen::Vector6d::Zero();
-    _eddot = _edot = _e = Eigen::Vector6d::Zero();
+    _xdot_real = _xdot_prec = Eigen::Vector6d::Zero();
+    _edot = _e = Eigen::Vector6d::Zero();
 
     // Initialize all matrix to identity matrix
     //_B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
@@ -33,6 +32,10 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 
     // Setting the derivation time
     _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
+
+    //Debug
+    logger = XBot::MatLogger2::MakeLogger("/tmp/logger.mat");
+
 
     // Filter
     //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
@@ -78,10 +81,7 @@ void CartesianImpedanceController::update_inertia()
 
 //    cout << "Lambda:\n" << _op_sp_inertia << endl;
 //    cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
-    //cout << _op_sp_inertia << "\n----------" << endl;
-
-    // WARNING
-    //_op_sp_inertia = _op_sp_inertia.inverse();
+    cout << "Lambda:\n" <<_op_sp_inertia << endl;
 
     // WARNING
     cholesky_decomp(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
@@ -90,13 +90,13 @@ void CartesianImpedanceController::update_inertia()
 void CartesianImpedanceController::update_D()
 {
 
-    _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
-
-    isPositiveDefinite(_D);
+    _D = _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+    //_D = Eigen::Matrix6d::Identity() * 50;
+    //isPositiveDefinite(_D);
 
     // NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-//    cout << _D << endl;
+    cout << "D:\n" <<_D << endl;
 //    cout << "------" << endl;
 
 }
@@ -105,13 +105,12 @@ void CartesianImpedanceController::update_real_value()
 {
 
     // Get position
-    Eigen::Affine3d pose;
-    _model->getPose(_end_effector_link, _root_link, pose);
-
-    _x_real << pose.translation(), pose.rotation().eulerAngles(0, 1, 2);
+    _model->getPose(_end_effector_link, _root_link, _x_real);
 
     // Get velocity
     _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
+    logger->add("real_vel", _xdot_real);
+
 
 //    // Get acceleration
 //    //_model->getRelativeAccelerationTwist(_end_effector_link, _root_link, _xddot_real);
@@ -127,9 +126,11 @@ void CartesianImpedanceController::update_real_value()
 void CartesianImpedanceController::compute_error()
 {
 
-    _e = _x_real - _x_ref;  // Position error
+    // Position error
+    _e << _x_real.translation() - _x_ref.translation(), orientation_error();
 
-    _edot = _xdot_real - _xdot_ref; // Velocity error
+    // Velocity error
+    _edot = _xdot_real;
 
     //_eddot = _xddot_real - _xddot_ref; // Acceleration error
 
@@ -137,6 +138,18 @@ void CartesianImpedanceController::compute_error()
 //    cout << _leg.getChainName() << endl;
     cout << "Pos error:\n" << _e << endl;
     cout << "Vel error:\n" << _edot << endl;
+
+}
+
+Eigen::Vector3d CartesianImpedanceController::orientation_error(){
+
+    Eigen::Matrix3d rotational_error = _x_ref.rotation() * _x_real.rotation().transpose();
+
+    Eigen::AngleAxisd angleAxis(rotational_error);
+    Eigen::Vector3d axis = angleAxis.axis();    // axis about which is exected the rotation
+    double angle = angleAxis.angle();   // in radiant
+
+    return axis * angle;
 
 }
 
@@ -226,9 +239,9 @@ Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::Matri
 
     //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-    cout << _K_omega << endl;
-    cout << _Q << endl;
-    cout << "=====" << endl;
+    cout << "K_omega:\n" << _K_omega << endl;
+    cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
+//    cout << "=====" << endl;
 
     return _Q;
 
@@ -291,11 +304,7 @@ void CartesianImpedanceController::set_stiffness()
 void CartesianImpedanceController::set_reference_value()
 {
 
-    Eigen::Affine3d pose;
-    _model->getPose(_end_effector_link, _root_link, pose);
-
-    _x_ref << pose.translation(), pose.rotation().eulerAngles(0, 1, 2);
-
+    _model->getPose(_end_effector_link, _root_link, _x_ref);
     _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
 
 }
@@ -305,4 +314,7 @@ void CartesianImpedanceController::setEnd_effector_link(const string &newEnd_eff
     _end_effector_link = newEnd_effector_link;
 }
 
+void CartesianImpedanceController::reset_logger(){
+    logger.reset();
+}
 

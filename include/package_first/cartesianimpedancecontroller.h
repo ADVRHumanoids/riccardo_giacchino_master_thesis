@@ -20,6 +20,7 @@
 #include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
 #include <awesome_utils/awesome_utils/sign_proc_utils.hpp>
+#include <matlogger2/matlogger2.h>
 
 // ==============================================================================
 // Namespace
@@ -111,6 +112,7 @@ public:
      */
     void setEnd_effector_link(const string &newEnd_effector_link);
 
+    void reset_logger();
 
 private:
 
@@ -131,14 +133,14 @@ private:
     JointNameMap _ctrl_joint;
 
     // Reference acceleration, velocity, position of the end-effector w.r.t. to the base link. By default equal to zero
-    Eigen::Vector6d _xddot_ref, _xdot_ref, _x_ref;
+    Eigen::Affine3d _x_ref, _x_real;
 
     // Actual acceleration, velocity, position of the end-effector w.r.t. to the base link
-    Eigen::Vector6d _xddot_real, _xdot_real, _x_real;
+    Eigen::Vector6d _xdot_real;
     Eigen::Vector6d _xdot_prec; // used for the computation of the acceleration that is done by dv/dt
 
     // Error between the actual and reference values
-    Eigen::Vector6d _eddot, _edot, _e;
+    Eigen::Vector6d _edot, _e;
 
     // Cartesian Controller
     Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
@@ -158,6 +160,8 @@ private:
     double _rho = 0.001;
 
     SignProcUtils::MovAvrgFilt _velocity_filter;   // Moving average filter of the velocity, used to compute the acceleration through numerical derivative
+    XBot::MatLogger2::Ptr logger;
+
 
     // ==============================================================================
     // Additional Functions
@@ -229,6 +233,8 @@ private:
     Eigen::Matrix6d  svd_inverse(Eigen::Matrix6d matrix);
 
     double f(double x);
+
+    Eigen::Vector3d orientation_error();
 
 };
 

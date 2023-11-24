@@ -38,7 +38,7 @@ bool ControllerManager::on_initialize()
             cout << "[ERROR]: robot does not have chain " << chain << endl;
             return false;
 
-        } else {
+        } else{
 
             RobotChain& leg = _robot->chain(chain);
 
@@ -46,6 +46,7 @@ bool ControllerManager::on_initialize()
                 std::make_unique<CartesianImpedanceController>(_model,
                                                                _stiffness.asDiagonal(),
                                                                cont[i]));
+
             i++;
 
             for (string joint_name : leg.getJointNames()){
@@ -59,14 +60,14 @@ bool ControllerManager::on_initialize()
 
                     joint_names.push_back(joint_name);
                     _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
-                    _stiff_tmp_state[joint_name] = 500.0;
-                    _damp_tmp_state[joint_name] = 50.0;
+                    _stiff_tmp_state[joint_name] = 0.0;
+                    _damp_tmp_state[joint_name] = 0.0;
                 }
 
             }
 
         }
-
+        break;
     }
 
     setDefaultControlMode(_ctrl_map);
@@ -115,8 +116,7 @@ void ControllerManager::run()
 
     //cout << effort << endl;
 
-    _robot->setEffortReference(effort);
-
+    //_robot->setEffortReference(effort);
 
     _robot->setStiffness(_stiff_tmp_state);
     _robot->setDamping(_damp_tmp_state);
@@ -132,6 +132,11 @@ void ControllerManager::on_stop()
     _robot->setDamping(_damp_initial_state);
 
     _robot->move();
+
+
+    for (auto& leg : _legs_controller){
+        leg->reset_logger();
+    }
 
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
 }
