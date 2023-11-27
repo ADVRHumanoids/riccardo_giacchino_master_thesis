@@ -171,7 +171,7 @@ private:
      * @brief cholesky_decomp compute the Cholesky decomposition of the operational space inertia
      * in order to obtain the matrix Q used in the computation of stiffness (K) and damping (D)
      */
-    Eigen::Matrix6d cholesky_decomp(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
+    Eigen::Matrix6d Q_computation(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
 
     /**
      * @brief matrix_sqrt compute the square root of each elements of the matrix

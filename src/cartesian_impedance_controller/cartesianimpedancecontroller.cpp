@@ -79,18 +79,19 @@ void CartesianImpedanceController::update_inertia()
 
     _op_sp_inertia = svd_inverse(_op_sp_inertia);
 
+    // NOTE: Debug print
 //    cout << "Lambda:\n" << _op_sp_inertia << endl;
 //    cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
     cout << "Lambda:\n" <<_op_sp_inertia << endl;
 
     // WARNING
-    cholesky_decomp(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
+    Q_computation(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
 }
 
 void CartesianImpedanceController::update_D()
 {
 
-    _D = _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+    _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
     //_D = Eigen::Matrix6d::Identity() * 50;
     //isPositiveDefinite(_D);
 
@@ -109,8 +110,7 @@ void CartesianImpedanceController::update_real_value()
 
     // Get velocity
     _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
-    logger->add("real_vel", _xdot_real);
-
+    logger->add("vel_real", _xdot_real);
 
 //    // Get acceleration
 //    //_model->getRelativeAccelerationTwist(_end_effector_link, _root_link, _xddot_real);
@@ -127,12 +127,12 @@ void CartesianImpedanceController::compute_error()
 {
 
     // Position error
-    _e << _x_real.translation() - _x_ref.translation(), orientation_error();
+    _e << _x_ref.translation() - _x_real.translation(), orientation_error();
+    logger->add("pos_err", _e);
+    logger->add("pos_ref", _x_ref.translation());
 
     // Velocity error
-    _edot = _xdot_real;
-
-    //_eddot = _xddot_real - _xddot_ref; // Acceleration error
+    _edot = -_xdot_real;
 
     //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
@@ -157,7 +157,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 {
 
     update_inertia();
-    update_D();   //WARNING
+    update_D();
     update_real_value();
     compute_error();
 
@@ -166,6 +166,10 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     Eigen::VectorXd torque;
 
     force = (_D * _edot) + (_K * _e);
+
+    //force = _K * _e;
+
+    logger->add("force", force);
 
     //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
@@ -207,7 +211,7 @@ void CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& mat
 
 }
 
-Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B)
+Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B)
 {
 
     //TODO: create private variable and inizialize them in the constructor

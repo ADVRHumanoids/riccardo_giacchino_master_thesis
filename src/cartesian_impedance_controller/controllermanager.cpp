@@ -23,7 +23,7 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 1000, 1000, 1000, 1000, 1000, 1000;
+    _stiffness << 2000, 2000, 2000, 2000, 2000, 2000;
 
     vector<string> cont = {"contact_1", "contact_2", "contact_3", "contact_4"};
 
@@ -116,7 +116,7 @@ void ControllerManager::run()
 
     //cout << effort << endl;
 
-    //_robot->setEffortReference(effort);
+    _robot->setEffortReference(effort);
 
     _robot->setStiffness(_stiff_tmp_state);
     _robot->setDamping(_damp_tmp_state);
