@@ -7,17 +7,19 @@
 
 CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
                                                            Eigen::Matrix6d stiffness,
-                                                           const string end_effector):
+                                                           const string end_effector,
+                                                           const string base_link):
     _model(model),
     _K(stiffness),
-    _end_effector_link(end_effector)
+    _end_effector_link(end_effector),
+    _root_link(base_link)
 {
 
 //    _end_effector_link = _leg.getTipLinkName();
 //    _root_link = _leg.getBaseLinkName();
 
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-    _model->getInertiaInverse(_B_inv);
+    _model->getInertiaMatrix(_B_inv);
 
     _n_joints = _J.rows();
 
@@ -36,7 +38,6 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     //Debug
     logger = XBot::MatLogger2::MakeLogger("/tmp/logger.mat");
 
-
     // Filter
     //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
 
@@ -46,8 +47,8 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     cout << "Root link: " << _root_link << endl << "End effector link: " << _end_effector_link << endl;
     cout << "Stiffness\n" << _K << endl;
     cout << "Damping\n" << _D_zeta << endl;
-    //cout << "Joint space inertial matrix\n" << _B_inv << endl;
-    //cout << "Jacobian transpose:\n" << _J.transpose() << endl;    //it is correct, good job guys
+    cout << "Joint space inertial matrix\n" << _B_inv << endl;
+    cout << "Jacobian transpose:\n" << _J.transpose() << endl;    //it is correct, good job guys
     cout << "==================" << endl;
 
 }
@@ -56,16 +57,11 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 // Additional Functions
 // ==============================================================================
 
-void CartesianImpedanceController::update_model(ModelInterface::Ptr model)
-{
-    _model = model;
-}
-
 void CartesianImpedanceController::update_inertia()
 {
 
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);    // the Jacobian is configuration dependant, so it has to be updated every cycle
-    _model->getInertiaInverse(_B_inv);  // compute the inertia matrix B, also configuration dependant
+    _model->getInertiaMatrix(_B_inv);  // compute the inertia matrix B, also configuration dependant
 
     cout << _end_effector_link << endl;
 
@@ -73,11 +69,11 @@ void CartesianImpedanceController::update_inertia()
     //cout << _J.transpose() << "\n----------------------" << endl;
 
     // Λ = (J * B¯¹ * J^T)¯¹
-    _op_sp_inertia = _J * _B_inv * _J.transpose();
+    _op_sp_inertia = _J * _B_inv.inverse() * _J.transpose();
 
-    //isPositiveDefinite(_op_sp_inertia);
+    isPositiveDefinite(_op_sp_inertia);
 
-    _op_sp_inertia = svd_inverse(_op_sp_inertia);
+    _op_sp_inertia = _op_sp_inertia.inverse();
 
     // NOTE: Debug print
 //    cout << "Lambda:\n" << _op_sp_inertia << endl;
@@ -91,7 +87,7 @@ void CartesianImpedanceController::update_inertia()
 void CartesianImpedanceController::update_D()
 {
 
-    _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+    _D = 0.5 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
     //_D = Eigen::Matrix6d::Identity() * 50;
     //isPositiveDefinite(_D);
 
@@ -162,7 +158,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     compute_error();
 
     // TODO: create private variable and inizialize them in the constructor
-    Eigen::Vector6d force;
+    Eigen::Vector6d force = Eigen::Vector6d::Zero();
     Eigen::VectorXd torque;
 
     force = (_D * _edot) + (_K * _e);

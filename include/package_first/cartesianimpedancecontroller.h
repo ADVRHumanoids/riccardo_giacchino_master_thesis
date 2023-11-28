@@ -58,7 +58,8 @@ public:
 
     CartesianImpedanceController(ModelInterface::Ptr model,
                                  Eigen::Matrix6d stiffness,
-                                 const string end_effector);
+                                 const string end_effector,
+                                 const string base_link = "torno");
 
     //~CartesianImpedanceController();
 
@@ -74,8 +75,6 @@ public:
      * @return return the wrench containig the force and moment
      */
     Eigen::VectorXd compute_torque();
-
-    void update_model(ModelInterface::Ptr);
 
     // ==============================================================================
     // Setter and Getter
