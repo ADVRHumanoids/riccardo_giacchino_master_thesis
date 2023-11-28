@@ -23,7 +23,7 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 2000, 2000, 1000, 2000, 2000, 2000;
+    _stiffness << 1000, 1000, 1000, 300, 300, 300;
 
     string arm_chain = "left_arm";
 
@@ -54,15 +54,15 @@ bool ControllerManager::on_initialize()
                 joint_names.push_back(joint_name);
                 _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
                 _stiff_tmp_state[joint_name] = 0.0;
-                _damp_tmp_state[joint_name] = 0.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
+                _damp_tmp_state[joint_name] = 1.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
             }
 
         }
 
     }
 
-
     setDefaultControlMode(_ctrl_map);
+
 
     return true;
 
@@ -80,7 +80,7 @@ void ControllerManager::on_start()
 
     cout << "[INFO]: Cartesian impedance control is starting!" << endl;
 
-    if (!_robot->setStiffness(_stiff_tmp_state) /*|| !_robot->setDamping(_damp_tmp_state)*/)
+    if (!_robot->setStiffness(_stiff_tmp_state) || !_robot->setDamping(_damp_tmp_state))
         cout << "[ERROR]: unable to set stiffness or damping value" << endl;
 
     _robot->move();
@@ -111,7 +111,7 @@ void ControllerManager::run()
     _robot->setEffortReference(effort);
 
     _robot->setStiffness(_stiff_tmp_state);
-//    _robot->setDamping(_damp_tmp_state);
+    _robot->setDamping(_damp_tmp_state);
 
     _robot->move();
 
@@ -121,7 +121,7 @@ void ControllerManager::on_stop()
 {
 
     _robot->setStiffness(_stiff_initial_state);
-//    _robot->setDamping(_damp_initial_state);
+    _robot->setDamping(_damp_initial_state);
 
     _robot->move();
 

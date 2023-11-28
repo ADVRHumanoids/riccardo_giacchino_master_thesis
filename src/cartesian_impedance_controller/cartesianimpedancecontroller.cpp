@@ -32,11 +32,11 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _Q = Eigen::Matrix6d::Identity();
     _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
 
-    // Setting the derivation time
-    _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
+    //_D_zeta = Eigen::Matrix6d::Identity()*0.7;
 
     //Debug
-    logger = XBot::MatLogger2::MakeLogger("/tmp/logger.mat");
+    logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat");
+    //logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Desktop/logger.mat");
 
     // Filter
     //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
@@ -47,7 +47,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     cout << "Root link: " << _root_link << endl << "End effector link: " << _end_effector_link << endl;
     cout << "Stiffness\n" << _K << endl;
     cout << "Damping\n" << _D_zeta << endl;
-    cout << "Joint space inertial matrix\n" << _B_inv << endl;
+    //cout << "Joint space inertial matrix\n" << _B_inv << endl;
     cout << "Jacobian transpose:\n" << _J.transpose() << endl;    //it is correct, good job guys
     cout << "==================" << endl;
 
@@ -71,14 +71,14 @@ void CartesianImpedanceController::update_inertia()
     // Λ = (J * B¯¹ * J^T)¯¹
     _op_sp_inertia = _J * _B_inv.inverse() * _J.transpose();
 
-    isPositiveDefinite(_op_sp_inertia);
+    //isPositiveDefinite(_op_sp_inertia);
 
     _op_sp_inertia = _op_sp_inertia.inverse();
 
     // NOTE: Debug print
 //    cout << "Lambda:\n" << _op_sp_inertia << endl;
 //    cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
-    cout << "Lambda:\n" <<_op_sp_inertia << endl;
+    //cout << "Lambda:\n" <<_op_sp_inertia << endl;
 
     // WARNING
     Q_computation(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
@@ -87,13 +87,14 @@ void CartesianImpedanceController::update_inertia()
 void CartesianImpedanceController::update_D()
 {
 
-    _D = 0.5 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+    _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
     //_D = Eigen::Matrix6d::Identity() * 50;
+
     //isPositiveDefinite(_D);
 
     // NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-    cout << "D:\n" <<_D << endl;
+    //cout << "D:\n" <<_D << endl;
 //    cout << "------" << endl;
 
 }
@@ -122,6 +123,9 @@ void CartesianImpedanceController::update_real_value()
 void CartesianImpedanceController::compute_error()
 {
 
+    _e = Eigen::Vector6d::Zero();
+    _edot = Eigen::Vector6d::Zero();
+
     // Position error
     _e << _x_ref.translation() - _x_real.translation(), orientation_error();
     logger->add("pos_err", _e);
@@ -131,7 +135,6 @@ void CartesianImpedanceController::compute_error()
     _edot = -_xdot_real;
 
     //NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
     cout << "Pos error:\n" << _e << endl;
     cout << "Vel error:\n" << _edot << endl;
 
@@ -161,9 +164,9 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     Eigen::Vector6d force = Eigen::Vector6d::Zero();
     Eigen::VectorXd torque;
 
-    force = (_D * _edot) + (_K * _e);
+    //force = (_D * _edot) + (_K * _e);
 
-    //force = _K * _e;
+    force = _K * _e;
 
     logger->add("force", force);
 
@@ -172,6 +175,8 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     cout << "Force:\n" << force << endl;
 
     torque = _J.transpose() * force;
+
+    cout << "Torque:\n" << torque.segment(31, 6) << endl;
 
     //NOTE: Debug print
 //    cout << torque.transpose() << endl;
@@ -239,8 +244,10 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
 
     //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-    cout << "K_omega:\n" << _K_omega << endl;
-    cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
+//    cout << "Q:\n" << _Q << endl;
+//    cout << "K_omega:\n" << _K_omega << endl;
+//    cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
+//    cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
 //    cout << "=====" << endl;
 
     return _Q;
