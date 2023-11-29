@@ -48,7 +48,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     cout << "Stiffness\n" << _K << endl;
     cout << "Damping\n" << _D_zeta << endl;
     //cout << "Joint space inertial matrix\n" << _B_inv << endl;
-    cout << "Jacobian transpose:\n" << _J.transpose() << endl;    //it is correct, good job guys
+    //cout << "Jacobian transpose:\n" << _J.transpose() << endl;    //it is correct, good job guys
     cout << "==================" << endl;
 
 }
@@ -74,7 +74,7 @@ void CartesianImpedanceController::update_inertia()
     _op_sp_inertia = _op_sp_inertia.inverse();
 
     // NOTE: Debug print
-//    cout << "Lambda:\n" << _op_sp_inertia << endl;
+    cout << "Lambda:\n" << _op_sp_inertia << endl;
 //    cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
     //cout << "Lambda:\n" <<_op_sp_inertia << endl;
 
@@ -214,7 +214,7 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 {
 
     Eigen::Vector6d diag = matrix.diagonal();
-    diag = (diag.array() + 0.01).cwiseSqrt();
+    diag = (diag.array() + 0.001).cwiseSqrt();
 
     return diag.asDiagonal();
 
@@ -271,11 +271,11 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
 
     //NOTE: Debug print
 //    cout << _leg.getChainName() << endl;
-//    cout << "Q:\n" << _Q << endl;
-//    cout << "K_omega:\n" << _K_omega << endl;
-//    cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
-//    cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
-//    cout << "=====" << endl;
+    cout << "Q:\n" << _Q << endl;
+    cout << "K_omega:\n" << _K_omega << endl;
+    cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
+    cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
+    cout << "=====" << endl;
 
     return _Q;
 
