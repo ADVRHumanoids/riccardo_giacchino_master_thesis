@@ -71,8 +71,6 @@ void CartesianImpedanceController::update_inertia()
     // Λ = (J * B¯¹ * J^T)¯¹
     _op_sp_inertia = _J * _B_inv.inverse() * _J.transpose();
 
-    //isPositiveDefinite(_op_sp_inertia);
-
     _op_sp_inertia = _op_sp_inertia.inverse();
 
     // NOTE: Debug print
@@ -87,15 +85,45 @@ void CartesianImpedanceController::update_inertia()
 void CartesianImpedanceController::update_D()
 {
 
+    //Classic method
+
     _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+    cout << "Damping matrix:" << endl;
+    isPositiveDefinite(_D);
+
     //_D = Eigen::Matrix6d::Identity() * 50;
 
-    //isPositiveDefinite(_D);
+    //cout << "Joint damping matrix:\n" << _J.transpose() * _D * _J << endl;
 
     // NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
+    //cout << _leg.getChainName() << endl;
     //cout << "D:\n" <<_D << endl;
-//    cout << "------" << endl;
+    //cout << "------" << endl;
+
+
+    // Quick and Dirty method
+    /*
+    Eigen::Matrix6d A = cholesky_decomp(_op_sp_inertia);
+
+    //D = A * K_d + A^T * K_d;
+
+    _D = A * matrix_sqrt(_K) + A.transpose() * matrix_sqrt(_K);
+
+    */
+
+    //try to print the joint damping matrix
+    /*
+    Eigen::MatrixXd joint_damp = Eigen::MatrixXd::Identity(46,46);
+    for (int i = 31; i <= 36; i++){
+        joint_damp(i,i) = 10;
+    }
+
+    //Plot of Joint damping matrix
+    Eigen::MatrixXd tmp = _J * _J.transpose();
+    Eigen::MatrixXd J_psuedo = _J.transpose() * tmp.inverse();
+
+    cout << "Joint damping:\n" << J_psuedo << endl;
+    */
 
 }
 
@@ -164,9 +192,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     Eigen::Vector6d force = Eigen::Vector6d::Zero();
     Eigen::VectorXd torque;
 
-    //force = (_D * _edot) + (_K * _e);
-
-    force = _K * _e;
+    force = (_D * _edot) + (_K * _e);
 
     logger->add("force", force);
 
@@ -188,7 +214,7 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 {
 
     Eigen::Vector6d diag = matrix.diagonal();
-    diag = (diag.array() + 0.01).cwiseSqrt();
+    diag = (diag.array() + 0.001).cwiseSqrt();
 
     return diag.asDiagonal();
 
@@ -225,6 +251,7 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_B(B);
 
     Eigen::MatrixXd Phi_B = eigen_solver_B.eigenvectors();
+
     Eigen::VectorXd lambda_B = eigen_solver_B.eigenvalues().array().sqrt().array() + 0.0001;
 
     Eigen::MatrixXd Lambda_B_sqrt = lambda_B.asDiagonal();
@@ -284,6 +311,19 @@ Eigen::Matrix6d CartesianImpedanceController::svd_inverse(Eigen::Matrix6d matrix
 double CartesianImpedanceController::f(double x){
 
     return (x+0.01)/(_rho + pow(x, 2));
+
+}
+
+Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix){
+
+    Eigen::LLT<Eigen::Matrix<double, 6, 6>> lltOfMatrix(matrix);
+
+    if (lltOfMatrix.info() == Eigen::Success) {
+        return lltOfMatrix.matrixL();
+    } else {
+        std::cerr << "Cholesky decomposition failed! Matrix might not be symmetric positive-definite." << std::endl;
+        return Eigen::Matrix<double, 6, 6>::Zero();
+    }
 
 }
 

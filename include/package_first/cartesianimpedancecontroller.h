@@ -235,6 +235,8 @@ private:
 
     Eigen::Vector3d orientation_error();
 
+    Eigen::Matrix6d cholesky_decomp(Eigen::Matrix6d matrix);
+
 };
 
 #endif // CARTESIANIMPEDANCECONTROLLER_H

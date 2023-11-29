@@ -54,7 +54,7 @@ bool ControllerManager::on_initialize()
                 joint_names.push_back(joint_name);
                 _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
                 _stiff_tmp_state[joint_name] = 0.0;
-                _damp_tmp_state[joint_name] = 1.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
+                _damp_tmp_state[joint_name] = 0.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
             }
 
         }
