@@ -23,7 +23,7 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 1000, 1000, 1000, 300, 300, 300;
+    _stiffness << 2000, 2000, 2000, 300, 300, 300;
 
     string arm_chain = "left_arm";
 

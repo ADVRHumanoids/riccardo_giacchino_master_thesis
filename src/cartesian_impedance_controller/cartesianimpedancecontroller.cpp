@@ -214,7 +214,7 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 {
 
     Eigen::Vector6d diag = matrix.diagonal();
-    diag = (diag.array() + 0.001).cwiseSqrt();
+    diag = (diag.array() + 0.01).cwiseSqrt();
 
     return diag.asDiagonal();
 
