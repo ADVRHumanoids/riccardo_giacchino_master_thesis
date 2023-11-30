@@ -7,8 +7,6 @@ bool ControllerManager::on_initialize()
 
     _robot->sense();
 
-    // TODO: about the derivation time, how it works
-
     _model = ModelInterface::getModel(_robot->getConfigOptions());
 
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
@@ -64,40 +62,6 @@ bool ControllerManager::on_initialize()
         }
     }
 
-//    if (!_robot->hasChain(arm_chain)){
-
-//        cout << "[ERROR]: robot does not have chain " << arm_chain << endl;
-//        return false;
-
-//    } else{
-
-//        RobotChain& arm = _robot->chain(arm_chain);
-
-//        _legs_controller.push_back(
-//            std::make_unique<CartesianImpedanceController>(_model,
-//                                                           _stiffness.asDiagonal(),
-//                                                           arm.getTipLinkName(),
-//                                                           arm.getBaseLinkName()));
-
-//        for (string joint_name : arm.getJointNames()){
-
-//            if (!_robot->hasJoint(joint_name)){
-
-//                //cout << "[ERROR]: robot does not have joint " << joint_name << endl;
-//                return false;
-
-//            } else {
-
-//                joint_names.push_back(joint_name);
-//                _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
-//                _stiff_tmp_state[joint_name] = 0.0;
-//                _damp_tmp_state[joint_name] = 0.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
-//            }
-
-//        }
-
-//    }
-
     setDefaultControlMode(_ctrl_map);
 
     return true;
@@ -141,8 +105,6 @@ void ControllerManager::run()
         effort += leg->compute_torque();
 
     }
-
-    //cout << effort << endl;
 
     _robot->setEffortReference(effort);
 
