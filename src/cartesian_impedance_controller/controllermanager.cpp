@@ -23,54 +23,46 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 2000, 2000, 2000, 2000, 2000, 2000;
+    _stiffness << 2000, 2000, 2000, 300, 300, 300;
 
-    vector<string> cont = {"contact_1", "contact_2", "contact_3", "contact_4"};
+    string arm_chain = "left_arm";
 
-    auto leg_chains = getParamOrThrow<vector<string>>("~chain_names");
+    if (!_robot->hasChain(arm_chain)){
 
-    int i = 0;
+        cout << "[ERROR]: robot does not have chain " << arm_chain << endl;
+        return false;
 
-    for (string chain : leg_chains){
+    } else{
 
-        if (!_robot->hasChain(chain)){
+        RobotChain& arm = _robot->chain(arm_chain);
 
-            cout << "[ERROR]: robot does not have chain " << chain << endl;
-            return false;
+        _legs_controller.push_back(
+            std::make_unique<CartesianImpedanceController>(_model,
+                                                           _stiffness.asDiagonal(),
+                                                           arm.getTipLinkName(),
+                                                           arm.getBaseLinkName()));
 
-        } else{
+        for (string joint_name : arm.getJointNames()){
 
-            RobotChain& leg = _robot->chain(chain);
+            if (!_robot->hasJoint(joint_name)){
 
-            _legs_controller.push_back(
-                std::make_unique<CartesianImpedanceController>(_model,
-                                                               _stiffness.asDiagonal(),
-                                                               cont[i]));
+                //cout << "[ERROR]: robot does not have joint " << joint_name << endl;
+                return false;
 
-            i++;
+            } else {
 
-            for (string joint_name : leg.getJointNames()){
-
-                if (!_robot->hasJoint(joint_name)){
-
-                    //cout << "[ERROR]: robot does not have joint " << joint_name << endl;
-                    return false;
-
-                } else {
-
-                    joint_names.push_back(joint_name);
-                    _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
-                    _stiff_tmp_state[joint_name] = 0.0;
-                    _damp_tmp_state[joint_name] = 0.0;
-                }
-
+                joint_names.push_back(joint_name);
+                _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
+                _stiff_tmp_state[joint_name] = 0.0;
+                _damp_tmp_state[joint_name] = 0.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
             }
 
         }
-        break;
+
     }
 
     setDefaultControlMode(_ctrl_map);
+
 
     return true;
 
@@ -106,7 +98,7 @@ void ControllerManager::run()
 
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
 
-    Eigen::VectorXd effort = Eigen::VectorXd::Zero(40);
+    Eigen::VectorXd effort = Eigen::VectorXd::Zero(40); // reset to zero the effort
 
     for (auto& leg : _legs_controller){
 

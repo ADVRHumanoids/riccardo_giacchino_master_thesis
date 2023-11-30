@@ -7,17 +7,16 @@
 
 CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
                                                            Eigen::Matrix6d stiffness,
-                                                           const string end_effector):
+                                                           const string end_effector,
+                                                           const string base_link):
     _model(model),
     _K(stiffness),
-    _end_effector_link(end_effector)
+    _end_effector_link(end_effector),
+    _root_link(base_link)
 {
 
-//    _end_effector_link = _leg.getTipLinkName();
-//    _root_link = _leg.getBaseLinkName();
-
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-    _model->getInertiaInverse(_B_inv);
+    _model->getInertiaMatrix(_B_inv);
 
     _n_joints = _J.rows();
 
@@ -28,14 +27,14 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Initialize all matrix to identity matrix
     //_B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
     _Q = Eigen::Matrix6d::Identity();
-    _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
+    _K_omega = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
 
-    // Setting the derivation time
-    _dt = 0.01; //NOTE: since we are in real-time, is it correct to have a dt?
+    _D_zeta = Eigen::Matrix6d::Identity();
+    //_D_zeta = Eigen::Matrix6d::Identity()*0.7;
 
     //Debug
-    logger = XBot::MatLogger2::MakeLogger("/tmp/logger.mat");
-
+    logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat");
+    //logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Desktop/logger.mat");
 
     // Filter
     //_velocity_filter = SignProcUtils::MovAvrgFilt(6,_dt,15);
@@ -56,33 +55,27 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 // Additional Functions
 // ==============================================================================
 
-void CartesianImpedanceController::update_model(ModelInterface::Ptr model)
-{
-    _model = model;
-}
-
 void CartesianImpedanceController::update_inertia()
 {
 
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);    // the Jacobian is configuration dependant, so it has to be updated every cycle
-    _model->getInertiaInverse(_B_inv);  // compute the inertia matrix B, also configuration dependant
+    _model->getInertiaMatrix(_B_inv);  // compute the inertia matrix B, also configuration dependant
 
-    cout << _end_effector_link << endl;
+    // NOTE: Debug
+    //cout << _end_effector_link << endl;
 
     // NOTE: Debug print
     //cout << _J.transpose() << "\n----------------------" << endl;
 
     // Λ = (J * B¯¹ * J^T)¯¹
-    _op_sp_inertia = _J * _B_inv * _J.transpose();
+    _op_sp_inertia = _J * _B_inv.inverse() * _J.transpose();
 
-    //isPositiveDefinite(_op_sp_inertia);
-
-    _op_sp_inertia = svd_inverse(_op_sp_inertia);
+    _op_sp_inertia = _op_sp_inertia.inverse();
 
     // NOTE: Debug print
-//    cout << "Lambda:\n" << _op_sp_inertia << endl;
-//    cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
-    cout << "Lambda:\n" <<_op_sp_inertia << endl;
+    //cout << "Lambda:\n" << _op_sp_inertia << endl;
+    //cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
+    //cout << "Lambda:\n" <<_op_sp_inertia << endl;
 
     // WARNING
     Q_computation(_K, _op_sp_inertia);  // Store the resulting matrix in the variable _Q;
@@ -91,14 +84,19 @@ void CartesianImpedanceController::update_inertia()
 void CartesianImpedanceController::update_D()
 {
 
+    //Classic method
+
     _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
-    //_D = Eigen::Matrix6d::Identity() * 50;
+
+    //cout << "Damping matrix:" << endl;
     //isPositiveDefinite(_D);
 
+    //cout << "Joint damping matrix:\n" << _J.transpose() * _D * _J << endl;
+
     // NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
-    cout << "D:\n" <<_D << endl;
-//    cout << "------" << endl;
+    //cout << _leg.getChainName() << endl;
+    //cout << "D:\n" <<_D << endl;
+    //cout << "------" << endl;
 
 }
 
@@ -110,7 +108,7 @@ void CartesianImpedanceController::update_real_value()
 
     // Get velocity
     _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
-    logger->add("vel_real", _xdot_real);
+    //logger->add("vel_real", _xdot_real);
 
 //    // Get acceleration
 //    //_model->getRelativeAccelerationTwist(_end_effector_link, _root_link, _xddot_real);
@@ -126,6 +124,9 @@ void CartesianImpedanceController::update_real_value()
 void CartesianImpedanceController::compute_error()
 {
 
+    _e = Eigen::Vector6d::Zero();
+    _edot = Eigen::Vector6d::Zero();
+
     // Position error
     _e << _x_ref.translation() - _x_real.translation(), orientation_error();
     logger->add("pos_err", _e);
@@ -135,9 +136,8 @@ void CartesianImpedanceController::compute_error()
     _edot = -_xdot_real;
 
     //NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
-    cout << "Pos error:\n" << _e << endl;
-    cout << "Vel error:\n" << _edot << endl;
+    //cout << "Pos error:\n" << _e << endl;
+    //cout << "Vel error:\n" << _edot << endl;
 
 }
 
@@ -162,23 +162,24 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     compute_error();
 
     // TODO: create private variable and inizialize them in the constructor
-    Eigen::Vector6d force;
+    Eigen::Vector6d force = Eigen::Vector6d::Zero();
     Eigen::VectorXd torque;
 
     force = (_D * _edot) + (_K * _e);
 
-    //force = _K * _e;
-
     logger->add("force", force);
+    //logger->add("torque", torque.segment(31, 6));
 
     //NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
+    //cout << _leg.getChainName() << endl;
     cout << "Force:\n" << force << endl;
 
     torque = _J.transpose() * force;
 
+    //cout << "Torque:\n" << torque.segment(31, 6) << endl;
+
     //NOTE: Debug print
-//    cout << torque.transpose() << endl;
+    //cout << torque.transpose() << endl;
 
     return torque.tail(40);
 }
@@ -187,7 +188,7 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 {
 
     Eigen::Vector6d diag = matrix.diagonal();
-    diag = (diag.array() + 0.01).cwiseSqrt();
+    diag = (diag.array() + 0.001).cwiseSqrt();
 
     return diag.asDiagonal();
 
@@ -199,7 +200,7 @@ void CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& mat
     Eigen::VectorXd eigenvalues = eigen_solver.eigenvalues();
 
     if (eigenvalues.minCoeff() > 0){
-        cout << "Is positive definite:\n" << matrix << endl;
+        //cout << "Is positive definite:\n" << matrix << endl;
     }
     else if (eigenvalues.minCoeff() >= 0) {
         cout << "Is positive semidefinite:\n" << matrix << endl;
@@ -224,6 +225,7 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_B(B);
 
     Eigen::MatrixXd Phi_B = eigen_solver_B.eigenvectors();
+
     Eigen::VectorXd lambda_B = eigen_solver_B.eigenvalues().array().sqrt().array() + 0.0001;
 
     Eigen::MatrixXd Lambda_B_sqrt = lambda_B.asDiagonal();
@@ -242,10 +244,11 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
     _Q = Phi.inverse().transpose();
 
     //NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
-    cout << "K_omega:\n" << _K_omega << endl;
-    cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
-//    cout << "=====" << endl;
+    //cout << "Q:\n" << _Q << endl;
+    //cout << "K_omega:\n" << _K_omega << endl;
+    //cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
+    //cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
+    //cout << "=====" << endl;
 
     return _Q;
 
@@ -281,6 +284,19 @@ Eigen::Matrix6d CartesianImpedanceController::svd_inverse(Eigen::Matrix6d matrix
 double CartesianImpedanceController::f(double x){
 
     return (x+0.01)/(_rho + pow(x, 2));
+
+}
+
+Eigen::Matrix6d CartesianImpedanceController::cholesky_decomp(Eigen::Matrix6d matrix){
+
+    Eigen::LLT<Eigen::Matrix<double, 6, 6>> lltOfMatrix(matrix);
+
+    if (lltOfMatrix.info() == Eigen::Success) {
+        return lltOfMatrix.matrixL();
+    } else {
+        std::cerr << "Cholesky decomposition failed! Matrix might not be symmetric positive-definite." << std::endl;
+        return Eigen::Matrix<double, 6, 6>::Zero();
+    }
 
 }
 
