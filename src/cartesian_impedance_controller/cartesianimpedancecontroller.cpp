@@ -15,9 +15,6 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _root_link(base_link)
 {
 
-//    _end_effector_link = _leg.getTipLinkName();
-//    _root_link = _leg.getBaseLinkName();
-
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
     _model->getInertiaMatrix(_B_inv);
 
@@ -30,8 +27,9 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Initialize all matrix to identity matrix
     //_B_inv = Eigen::MatrixXd::Identity(_n_joints, _n_joints);
     _Q = Eigen::Matrix6d::Identity();
-    _K_omega = _D_zeta = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
+    _K_omega = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
 
+    _D_zeta = Eigen::Matrix6d::Identity();
     //_D_zeta = Eigen::Matrix6d::Identity()*0.7;
 
     //Debug
@@ -63,7 +61,8 @@ void CartesianImpedanceController::update_inertia()
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);    // the Jacobian is configuration dependant, so it has to be updated every cycle
     _model->getInertiaMatrix(_B_inv);  // compute the inertia matrix B, also configuration dependant
 
-    cout << _end_effector_link << endl;
+    // NOTE: Debug
+    //cout << _end_effector_link << endl;
 
     // NOTE: Debug print
     //cout << _J.transpose() << "\n----------------------" << endl;
@@ -74,8 +73,8 @@ void CartesianImpedanceController::update_inertia()
     _op_sp_inertia = _op_sp_inertia.inverse();
 
     // NOTE: Debug print
-    cout << "Lambda:\n" << _op_sp_inertia << endl;
-//    cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
+    //cout << "Lambda:\n" << _op_sp_inertia << endl;
+    //cout << "Eigenvalues: " << _op_sp_inertia.eigenvalues() << "\n----------" << endl;
     //cout << "Lambda:\n" <<_op_sp_inertia << endl;
 
     // WARNING
@@ -88,10 +87,9 @@ void CartesianImpedanceController::update_D()
     //Classic method
 
     _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
-    cout << "Damping matrix:" << endl;
-    isPositiveDefinite(_D);
 
-    //_D = Eigen::Matrix6d::Identity() * 50;
+    //cout << "Damping matrix:" << endl;
+    //isPositiveDefinite(_D);
 
     //cout << "Joint damping matrix:\n" << _J.transpose() * _D * _J << endl;
 
@@ -99,31 +97,6 @@ void CartesianImpedanceController::update_D()
     //cout << _leg.getChainName() << endl;
     //cout << "D:\n" <<_D << endl;
     //cout << "------" << endl;
-
-
-    // Quick and Dirty method
-    /*
-    Eigen::Matrix6d A = cholesky_decomp(_op_sp_inertia);
-
-    //D = A * K_d + A^T * K_d;
-
-    _D = A * matrix_sqrt(_K) + A.transpose() * matrix_sqrt(_K);
-
-    */
-
-    //try to print the joint damping matrix
-    /*
-    Eigen::MatrixXd joint_damp = Eigen::MatrixXd::Identity(46,46);
-    for (int i = 31; i <= 36; i++){
-        joint_damp(i,i) = 10;
-    }
-
-    //Plot of Joint damping matrix
-    Eigen::MatrixXd tmp = _J * _J.transpose();
-    Eigen::MatrixXd J_psuedo = _J.transpose() * tmp.inverse();
-
-    cout << "Joint damping:\n" << J_psuedo << endl;
-    */
 
 }
 
@@ -135,7 +108,7 @@ void CartesianImpedanceController::update_real_value()
 
     // Get velocity
     _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
-    logger->add("vel_real", _xdot_real);
+    //logger->add("vel_real", _xdot_real);
 
 //    // Get acceleration
 //    //_model->getRelativeAccelerationTwist(_end_effector_link, _root_link, _xddot_real);
@@ -163,8 +136,8 @@ void CartesianImpedanceController::compute_error()
     _edot = -_xdot_real;
 
     //NOTE: Debug print
-    cout << "Pos error:\n" << _e << endl;
-    cout << "Vel error:\n" << _edot << endl;
+    //cout << "Pos error:\n" << _e << endl;
+    //cout << "Vel error:\n" << _edot << endl;
 
 }
 
@@ -195,17 +168,18 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     force = (_D * _edot) + (_K * _e);
 
     logger->add("force", force);
+    //logger->add("torque", torque.segment(31, 6));
 
     //NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
+    //cout << _leg.getChainName() << endl;
     cout << "Force:\n" << force << endl;
 
     torque = _J.transpose() * force;
 
-    cout << "Torque:\n" << torque.segment(31, 6) << endl;
+    //cout << "Torque:\n" << torque.segment(31, 6) << endl;
 
     //NOTE: Debug print
-//    cout << torque.transpose() << endl;
+    //cout << torque.transpose() << endl;
 
     return torque.tail(40);
 }
@@ -226,7 +200,7 @@ void CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& mat
     Eigen::VectorXd eigenvalues = eigen_solver.eigenvalues();
 
     if (eigenvalues.minCoeff() > 0){
-        cout << "Is positive definite:\n" << matrix << endl;
+        //cout << "Is positive definite:\n" << matrix << endl;
     }
     else if (eigenvalues.minCoeff() >= 0) {
         cout << "Is positive semidefinite:\n" << matrix << endl;
@@ -270,12 +244,11 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
     _Q = Phi.inverse().transpose();
 
     //NOTE: Debug print
-//    cout << _leg.getChainName() << endl;
-    cout << "Q:\n" << _Q << endl;
-    cout << "K_omega:\n" << _K_omega << endl;
-    cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
-    cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
-    cout << "=====" << endl;
+    //cout << "Q:\n" << _Q << endl;
+    //cout << "K_omega:\n" << _K_omega << endl;
+    //cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
+    //cout << "Q * Q^T:\n" <<_Q * _Q.transpose() << endl;
+    //cout << "=====" << endl;
 
     return _Q;
 
