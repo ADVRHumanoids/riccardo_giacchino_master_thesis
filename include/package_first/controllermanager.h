@@ -35,9 +35,9 @@ private:
 
     std::vector<std::unique_ptr<CartesianImpedanceController>> _legs_controller;
 
-    std::vector<string> _end_effector_link_names;
+    vector<string> _end_effector_links;
 
-    Eigen::Vector6d _stiffness;
+    vector<Eigen::Vector6d> _stiffness;
 
     JointNameMap _stiff_initial_state, _damp_initial_state;
     JointNameMap _stiff_tmp_state, _damp_tmp_state;

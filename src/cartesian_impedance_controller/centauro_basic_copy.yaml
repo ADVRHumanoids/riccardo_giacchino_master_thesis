@@ -29,20 +29,23 @@ xbotcore_plugins:
     ros_io: {thread: nrt_main, type: ros_io}
 
     ros_control: {thread: nrt_main, type: ros_control, params: {autostart: {type: bool, value: true}}}
-    
+
     omnisteering:
       type: omnisteering_controller_plugin
       thread: nrt_main
       params:
         wheel_names: [wheel_1, wheel_2, wheel_3, wheel_4]
         wheel_radius: [0.124, 0.124, 0.124, 0.124]
-    
+
     impedance_control:
       type: controllermanager
       thread: rt_main
       params:
         chain_names: [front_left_leg, front_right_leg, rear_left_leg, rear_right_leg]
-        stiffness: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        end_effector_links: [contact_1, contact_2, contact_3, contact_4]
+        stiffness_front: [2000.0, 2000.0, 5000.0, 200.0, 200.0, 200.0]
+        stiffness_back: [2000.0, 2000.0, 3000.0, 200.0, 200.0, 200.0]
+        damping: 1.0 # critical damping
 
 
 # global parameters
@@ -50,7 +53,6 @@ xbotcore_param:
   /xbot/hal/joint_safety/filter_autostart: {value: true, type: bool}
   /xbot/hal/joint_safety/filter_cutoff_hz: {value: 2.0, type: double}
   /xbot/hal/enable_safety: {value: false, type: bool}
-
 
 
 

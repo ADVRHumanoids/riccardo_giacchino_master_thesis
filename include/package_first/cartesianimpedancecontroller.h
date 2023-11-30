@@ -50,7 +50,8 @@ public:
     CartesianImpedanceController(ModelInterface::Ptr model,
                                  Eigen::Matrix6d stiffness,
                                  const string end_effector,
-                                 const string base_link = "torno");
+                                 const string base_link,
+                                 double damping_factor);
 
     //~CartesianImpedanceController();
 
@@ -109,6 +110,7 @@ private:
     // Cartesian Controller
     Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
     Eigen::Matrix6d _K, _D; // computed stiffness and damping matrix
+    double _zeta;   //ζ -> 0 for undamped behavoir and 1 for critically damped behavior
 
     // Generic Matrix
     Eigen::Matrix6d _op_sp_inertia; // operational space inertial matrix, usually referred to as Λ

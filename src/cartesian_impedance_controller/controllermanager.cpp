@@ -1,7 +1,5 @@
 #include "controllermanager.h"
 
-//NOTE: getParamOrThrow will take the the parameters from the YAML file, so they have to be defined in it
-
 bool ControllerManager::on_initialize()
 {
 
@@ -13,19 +11,20 @@ bool ControllerManager::on_initialize()
 
     _model->update();
 
-    /* Read stiffness value from YAML file
-    auto stiffness = getParamOrThrow<vector<double>>("~stiffness");
+    /* Read stiffness value from YAML file */
+    vector<string> leg_chains = getParamOrThrow<vector<string>>("~chain_names");
+    vector<string> _end_effector_links = getParamOrThrow<vector<string>>("~end_effector_links");
+    vector<double> stiffness_front = getParamOrThrow<vector<double>>("~stiffness_front");
+    vector<double> stiffness_back = getParamOrThrow<vector<double>>("~stiffness_back");
+    double damping_factor = getParamOrThrow<double>("~damping");
 
-    if (stiffness.size() < 6){
-        cout << "[ERROR]: stiffness size is less than 6" << endl;
-        return false;
-    }
-    */
-    _stiffness << 2000, 2000, 5000, 200, 200, 200;
+    Eigen::Map<Eigen::Vector6d> map1(stiffness_front.data());
+    Eigen::Map<Eigen::Vector6d> map2(stiffness_back.data());
 
-    vector<string> cont = {"contact_1", "contact_2", "contact_3", "contact_4"};
-
-    auto leg_chains = getParamOrThrow<vector<string>>("~chain_names");
+    _stiffness.push_back(map1);
+    _stiffness.push_back(map1);
+    _stiffness.push_back(map2);
+    _stiffness.push_back(map2);
 
     int i = 0;
 
@@ -42,9 +41,10 @@ bool ControllerManager::on_initialize()
 
             _legs_controller.push_back(
                 std::make_unique<CartesianImpedanceController>(_model,
-                                                               _stiffness.asDiagonal(),
-                                                               cont[i],
-                                                               leg.getBaseLinkName()));
+                                                               _stiffness[i].asDiagonal(),
+                                                               _end_effector_links[i],
+                                                               leg.getBaseLinkName(),
+                                                               damping_factor));
             i++;
 
             for (string joint_name : leg.getJointNames()){

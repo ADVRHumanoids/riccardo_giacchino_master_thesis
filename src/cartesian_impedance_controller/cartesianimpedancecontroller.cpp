@@ -8,11 +8,13 @@
 CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
                                                            Eigen::Matrix6d stiffness,
                                                            const string end_effector,
-                                                           const string base_link):
+                                                           const string base_link,
+                                                           double damping_factor):
     _model(model),
     _K(stiffness),
     _end_effector_link(end_effector),
-    _root_link(base_link)
+    _root_link(base_link),
+    _zeta(damping_factor)
 {
 
     // Inizialize Jacobian and Joint inertia matrix
