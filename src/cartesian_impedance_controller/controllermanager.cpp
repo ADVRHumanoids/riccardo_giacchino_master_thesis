@@ -23,46 +23,82 @@ bool ControllerManager::on_initialize()
         return false;
     }
     */
-    _stiffness << 2000, 2000, 2000, 300, 300, 300;
+    _stiffness << 2000, 2000, 5000, 200, 200, 200;
 
-    string arm_chain = "left_arm";
+    vector<string> cont = {"contact_1", "contact_2", "contact_3", "contact_4"};
 
-    if (!_robot->hasChain(arm_chain)){
+    auto leg_chains = getParamOrThrow<vector<string>>("~chain_names");
 
-        cout << "[ERROR]: robot does not have chain " << arm_chain << endl;
-        return false;
+    int i = 0;
 
-    } else{
+    for (string chain : leg_chains){
 
-        RobotChain& arm = _robot->chain(arm_chain);
+        if (!_robot->hasChain(chain)){
 
-        _legs_controller.push_back(
-            std::make_unique<CartesianImpedanceController>(_model,
-                                                           _stiffness.asDiagonal(),
-                                                           arm.getTipLinkName(),
-                                                           arm.getBaseLinkName()));
+            cout << "[ERROR]: robot does not have chain " << chain << endl;
+            return false;
 
-        for (string joint_name : arm.getJointNames()){
+        } else{
 
-            if (!_robot->hasJoint(joint_name)){
+            RobotChain& leg = _robot->chain(chain);
 
-                //cout << "[ERROR]: robot does not have joint " << joint_name << endl;
-                return false;
+            _legs_controller.push_back(
+                std::make_unique<CartesianImpedanceController>(_model,
+                                                               _stiffness.asDiagonal(),
+                                                               cont[i],
+                                                               leg.getBaseLinkName()));
+            i++;
 
-            } else {
+            for (string joint_name : leg.getJointNames()){
 
-                joint_names.push_back(joint_name);
-                _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
-                _stiff_tmp_state[joint_name] = 0.0;
-                _damp_tmp_state[joint_name] = 0.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
+                if (!_robot->hasJoint(joint_name)){
+                    //cout << "[ERROR]: robot does not have joint " << joint_name << endl;
+                    return false;
+                } else {
+                    joint_names.push_back(joint_name);
+                    _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
+                    _stiff_tmp_state[joint_name] = 0.0;
+                    _damp_tmp_state[joint_name] = 0.0;
+                }
             }
-
         }
-
     }
 
-    setDefaultControlMode(_ctrl_map);
+//    if (!_robot->hasChain(arm_chain)){
 
+//        cout << "[ERROR]: robot does not have chain " << arm_chain << endl;
+//        return false;
+
+//    } else{
+
+//        RobotChain& arm = _robot->chain(arm_chain);
+
+//        _legs_controller.push_back(
+//            std::make_unique<CartesianImpedanceController>(_model,
+//                                                           _stiffness.asDiagonal(),
+//                                                           arm.getTipLinkName(),
+//                                                           arm.getBaseLinkName()));
+
+//        for (string joint_name : arm.getJointNames()){
+
+//            if (!_robot->hasJoint(joint_name)){
+
+//                //cout << "[ERROR]: robot does not have joint " << joint_name << endl;
+//                return false;
+
+//            } else {
+
+//                joint_names.push_back(joint_name);
+//                _ctrl_map[joint_name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
+//                _stiff_tmp_state[joint_name] = 0.0;
+//                _damp_tmp_state[joint_name] = 0.0;    // Let's try to make it works just with the stiffness, leaving the joint damping set
+//            }
+
+//        }
+
+//    }
+
+    setDefaultControlMode(_ctrl_map);
 
     return true;
 

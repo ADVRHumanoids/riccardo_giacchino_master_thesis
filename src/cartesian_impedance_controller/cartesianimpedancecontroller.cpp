@@ -70,7 +70,7 @@ void CartesianImpedanceController::update_inertia()
     // Λ = (J * B¯¹ * J^T)¯¹
     _op_sp_inertia = _J * _B_inv.inverse() * _J.transpose();
 
-    _op_sp_inertia = _op_sp_inertia.inverse();
+    _op_sp_inertia = svd_inverse(_op_sp_inertia);
 
     // NOTE: Debug print
     //cout << "Lambda:\n" << _op_sp_inertia << endl;
@@ -129,8 +129,8 @@ void CartesianImpedanceController::compute_error()
 
     // Position error
     _e << _x_ref.translation() - _x_real.translation(), orientation_error();
-    logger->add("pos_err", _e);
-    logger->add("pos_ref", _x_ref.translation());
+    //logger->add("pos_err", _e);
+    //logger->add("pos_ref", _x_ref.translation());
 
     // Velocity error
     _edot = -_xdot_real;
@@ -167,12 +167,12 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 
     force = (_D * _edot) + (_K * _e);
 
-    logger->add("force", force);
+    //logger->add("force", force);
     //logger->add("torque", torque.segment(31, 6));
 
     //NOTE: Debug print
     //cout << _leg.getChainName() << endl;
-    cout << "Force:\n" << force << endl;
+    //cout << "Force:\n" << force << endl;
 
     torque = _J.transpose() * force;
 
