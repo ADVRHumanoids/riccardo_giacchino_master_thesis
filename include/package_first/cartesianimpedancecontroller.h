@@ -19,7 +19,6 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
-#include <awesome_utils/awesome_utils/sign_proc_utils.hpp>
 #include <matlogger2/matlogger2.h>
 
 // ==============================================================================

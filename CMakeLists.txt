@@ -14,33 +14,33 @@ find_package(xbot2 REQUIRED)
 #find_package(XBotInterface REQUIRED)
 
 catkin_package(
-#  INCLUDE_DIRS include
+#    INCLUDE_DIRS include
 #  LIBRARIES package_first
-#  CATKIN_DEPENDS cartesian_interface roscpp rospy std_msgs
+#    CATKIN_DEPENDS cartesian_interface roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
 include_directories(
   include/${PROJECT_NAME}
   ${cartesian_interface_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS}
   ${xbot2_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
  # ${XBotInterface_INCLUDE_DIRS}
 )
 
 
-add_library(${PROJECT_NAME} #src/motiongenerator.cpp
-                            #src/basestategetter.cpp
-                            #src/emafilter.cpp
-                            #src/lowpassfilter.cpp
-                            #src/grahamscanconvexhull.cpp
-                            src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
+# add_library(${PROJECT_NAME} src/motiongenerator.cpp
+                            # src/basestategetter.cpp
+                            # src/emafilter.cpp
+                            # src/lowpassfilter.cpp
+                            # src/grahamscanconvexhull.cpp
+                            # src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
 
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}) #awesome_utils::awesome_utils)
+# target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES}) #awesome_utils::awesome_utils)
 
 add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
 
-target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}) # awesome_utils::awesome_utils)
+target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2) # awesome_utils::awesome_utils)
 
 ### First project - setup_node
 #add_executable(setup_node src/setup.cpp)
@@ -80,13 +80,13 @@ target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_L
 #                        ${PROJECT_NAME}
 #                        awesome_utils::awesome_utils)
 
-install(TARGETS imp_controller
-                ${PROJECT_NAME}
+# install(TARGETS imp_controller
+#                 ${PROJECT_NAME}
 
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+#    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#    RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 ## Cartesian impedance controller plugin
 if(${xbot2_FOUND})
