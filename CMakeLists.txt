@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(cartesian_interface REQUIRED)
 find_package(xbot2 REQUIRED)
-find_package(awesome_utils REQUIRED)
+#find_package(awesome_utils REQUIRED)
 #find_package(XBotInterface REQUIRED)
 
 catkin_package(
@@ -29,18 +29,18 @@ include_directories(
 )
 
 
-add_library(${PROJECT_NAME} src/motiongenerator.cpp
-                            src/basestategetter.cpp
-                            src/emafilter.cpp
-                            src/lowpassfilter.cpp
-                            src/grahamscanconvexhull.cpp
+add_library(${PROJECT_NAME} #src/motiongenerator.cpp
+                            #src/basestategetter.cpp
+                            #src/emafilter.cpp
+                            #src/lowpassfilter.cpp
+                            #src/grahamscanconvexhull.cpp
                             src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
 
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} awesome_utils::awesome_utils)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}) #awesome_utils::awesome_utils)
 
 add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
 
-target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} awesome_utils::awesome_utils)
+target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}) # awesome_utils::awesome_utils)
 
 ### First project - setup_node
 #add_executable(setup_node src/setup.cpp)
