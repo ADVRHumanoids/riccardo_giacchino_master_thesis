@@ -22,23 +22,36 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _model->getInertiaMatrix(_B_inv);
 
     // Inizialize all parameteres to zero
-    _xdot_real = _xdot_prec = Eigen::Vector6d::Zero();
-    _edot = _e = Eigen::Vector6d::Zero();
+    _x_real = _x_ref = Eigen::Affine3d::Identity();
+    _xdot_real = _xdot_prec = Eigen::Vector6d::Zero(6);
+    _edot = _e = Eigen::Vector6d::Zero(6);
 
     // Initialize all matrix to identity matrix
     _Q = _K_omega = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
 
-    _D_zeta = Eigen::Matrix6d::Identity();  //TODO: set this parameter through YAML file
+    _D_zeta = Eigen::Matrix6d::Identity()*_zeta;  //TODO: set this parameter through YAML file
 
     // SVD decompositin variable initialization
     _U = _V = Eigen::MatrixXd::Identity(6,6);
     _S = _S_pseudo_inverse = Eigen::VectorXd::Zero(6);
 
     // Other initialization
-    _rotational_error = Eigen::Matrix3d::Identity();
+    _rotational_error = Eigen::Matrix3d::Identity(3, 3);
     _axis = Eigen::Vector3d::Zero();
     _angle = 0.0;
-    _diag = Eigen::Vector6d::Zero();
+    _diag = _eigenvalues = Eigen::Vector6d::Zero();
+
+    // Controller
+    _force = Eigen::Vector6d::Zero(6);
+    _torque = Eigen::VectorXd::Zero(46);
+
+    // SVD initialization
+    _U = _V = Eigen::Matrix6d::Identity(6, 6);
+    _S = _S_pseudo_inverse = Eigen::Vector6d::Zero(6);
+
+    // Generalized eigenvalue problem variables initialization
+    _Phi = _Phi_A = _Phi_B = _Phi_B_hat = _A_hat = _Lambda_B_sqrt = Eigen::Matrix6d::Identity(6, 6);
+    _lambda_B = Eigen::Vector6d::Zero(6);
 
     //Print of configuration parameters
     cout << "Configuration parameters:" << endl;
@@ -63,7 +76,7 @@ void CartesianImpedanceController::update_inertia()
     _model->getInertiaMatrix(_B_inv);
 
     // Λ = (J * B¯¹ * J^T)¯¹
-    _op_sp_inertia = _J * _B_inv.inverse() * _J.transpose();
+    _op_sp_inertia.noalias() = _J * _B_inv.inverse() * _J.transpose();
 
     /*
      * controlling the legs will cause a singularity in the Jacobian (no joint on the wheel),
@@ -71,7 +84,7 @@ void CartesianImpedanceController::update_inertia()
      * invert the matrix using the inverse of the SVD decomposition (that since Λ is symmetric
      * is equal to a spectral theorem UVU^T), quick and dirty method
     */
-    _op_sp_inertia = svd_inverse(_op_sp_inertia);
+    _op_sp_inertia.noalias() = svd_inverse(_op_sp_inertia);
 
     // NOTE: Debug print
     //cout << "Lambda:\n" << _op_sp_inertia << endl;
@@ -83,7 +96,7 @@ void CartesianImpedanceController::update_D()
 {
 
     // Refer to documentation for the formula
-    _D = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+    _D.noalias() = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
 
     isPositiveDefinite(_D);
 
@@ -104,14 +117,14 @@ void CartesianImpedanceController::compute_error()
 {
 
     // Reset position and velocity error
-    _e = Eigen::Vector6d::Zero();
-    _edot = Eigen::Vector6d::Zero();
+    _e.noalias() = Eigen::Vector6d::Zero();
+    _edot.noalias() = Eigen::Vector6d::Zero();
 
     // Position error
     _e << _x_ref.translation() - _x_real.translation(), orientation_error();
 
     // Velocity error
-    _edot = -_xdot_real;
+    _edot.noalias() = -_xdot_real;
 
     // Debug print
     //cout << "Pos error:\n" << _e << endl;
@@ -121,7 +134,7 @@ void CartesianImpedanceController::compute_error()
 
 Eigen::Vector3d CartesianImpedanceController::orientation_error(){
 
-    _rotational_error = _x_ref.rotation() * _x_real.rotation().transpose();
+    _rotational_error.noalias() = _x_ref.rotation() * _x_real.rotation().transpose();
 
     Eigen::AngleAxisd angleAxis(_rotational_error);
     _axis = angleAxis.axis();    // axis about which is executed the rotation
@@ -140,12 +153,12 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     compute_error();
 
     // Reset to zero each cycle
-    _force = Eigen::Vector6d::Zero();
+    _force = Eigen::Vector6d::Zero(6);
     _torque = Eigen::VectorXd::Zero(46);
 
-    _force = (_D * _edot) + (_K * _e);
+    _force.noalias() = (_D * _edot) + (_K * _e);
 
-    _torque = _J.transpose() * _force;
+    _torque.noalias() = _J.transpose() * _force;
 
     //Debug print
     //cout << torque.transpose() << endl;
@@ -161,16 +174,16 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 {
 
     _diag = matrix.diagonal();
-    _diag = (_diag.array() + 0.001).cwiseSqrt();  // add an offset terms to guarantee that the values are positive
+    _diag = (_diag.array() + _rho).cwiseSqrt();  // add an offset terms to guarantee that the values are positive
 
     return _diag.asDiagonal();
 
 }
 
-void CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& matrix) {
+void CartesianImpedanceController::isPositiveDefinite(const Eigen::Matrix6d& matrix) {
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver(matrix);
-    _eigenvalues = eigen_solver.eigenvalues();
+    _eigen_solver.compute(matrix);
+    _eigenvalues = _eigen_solver.eigenvalues();
 
     if (_eigenvalues.minCoeff() > 0){
         //cout << "Is positive definite:\n" << matrix << endl;
@@ -185,7 +198,7 @@ void CartesianImpedanceController::isPositiveDefinite(const Eigen::MatrixXd& mat
 
 }
 
-Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B)
+Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::Matrix6d& A, const Eigen::Matrix6d& B)
 {
 
     // Matrix A will be the stiffness _K
@@ -193,26 +206,26 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
 
     //isPositiveDefinite(B) // check the positive definiteness
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_B(B);
+    _eigen_solver.compute(B);
 
-    _Phi_B = eigen_solver_B.eigenvectors();
+    _Phi_B = _eigen_solver.eigenvectors();
 
-    _lambda_B = eigen_solver_B.eigenvalues().array().sqrt().array();
+    _lambda_B = _eigen_solver.eigenvalues().array().sqrt().array();
 
     _Lambda_B_sqrt = _lambda_B.asDiagonal();
 
-    _Phi_B_hat = _Phi_B * _Lambda_B_sqrt.inverse();
+    _Phi_B_hat.noalias() = _Phi_B * _Lambda_B_sqrt.inverse();
 
-    _A_hat = _Phi_B_hat.transpose() * A * _Phi_B_hat;
+    _A_hat.noalias() = _Phi_B_hat.transpose() * A * _Phi_B_hat;
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver_A(_A_hat);
+    _eigen_solver.compute(_A_hat);
 
-    _Phi_A = eigen_solver_A.eigenvectors();
+    _Phi_A = _eigen_solver.eigenvectors();
 
-    _Phi = _Phi_B_hat * _Phi_A;    // What i find here is X = (Q^T)^-1, I need to know Q = (X^-1)^T
+    _Phi.noalias() = _Phi_B_hat * _Phi_A;    // What i find here is X = (Q^T)^-1, I need to know Q = (X^-1)^T
 
-    _K_omega = eigen_solver_A.eigenvalues().asDiagonal();
-    _Q = _Phi.inverse().transpose();
+    _K_omega = _eigen_solver.eigenvalues().asDiagonal();
+    _Q.noalias() = _Phi.inverse().transpose();
 
     // Debug print
     //cout << "Q:\n" << _Q << endl;
@@ -228,11 +241,11 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::MatrixX
 Eigen::Matrix6d CartesianImpedanceController::svd_inverse(Eigen::Matrix6d matrix){
 
     // Compute the SVD decomposition -> A = USV^T
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    _svd.compute(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
-    _U = svd.matrixU(); // Left singular vectors
-    _V = svd.matrixV(); // Right singular vectors
-    _S = svd.singularValues(); // Singular values matrix
+    _U = _svd.matrixU(); // Left singular vectors
+    _V = _svd.matrixV(); // Right singular vectors
+    _S = _svd.singularValues(); // Singular values matrix
 
     // Debug print
     //cout << "Singular values original:\n" << _S.transpose() << endl;
@@ -283,7 +296,7 @@ void CartesianImpedanceController::set_reference_value()
 
 }
 
-void CartesianImpedanceController::reset_logger(){
-    logger.reset();
-}
+//void CartesianImpedanceController::reset_logger(){
+//    logger.reset();
+//}
 

@@ -84,7 +84,7 @@ public:
      * @brief reset_logger will reset the logger used to create the .mat file able to plot variable in Matlab
      * It is mandatory to reset the logger, otherwise the file will not contain the data
      */
-    void reset_logger();
+    //void reset_logger();
 
 private:
 
@@ -119,10 +119,10 @@ private:
     Eigen::Matrix6d _Q; // resulting matrix from the Cholesky decomposition of the operational space inertia, used in the computation of the damping matrix
 
     // SVD decomposition
-    Eigen::MatrixXd _U;
-    Eigen::MatrixXd _V;
-    Eigen::VectorXd _S = Eigen::VectorXd(6);
-    Eigen::VectorXd _S_pseudo_inverse = Eigen::VectorXd(6);
+    Eigen::Matrix6d _U;
+    Eigen::Matrix6d _V;
+    Eigen::Vector6d _S;
+    Eigen::Vector6d _S_pseudo_inverse;
     double _rho = 0.001;    // offset to guarantee positive definiteness
     double _offset = 0.01;
 
@@ -136,19 +136,23 @@ private:
     Eigen::VectorXd _torque;
 
     // Q computation
-    Eigen::MatrixXd _Phi_B;
-    Eigen::VectorXd _lambda_B;
-    Eigen::MatrixXd _Lambda_B_sqrt;
-    Eigen::MatrixXd _Phi_B_hat;
-    Eigen::MatrixXd _A_hat;
-    Eigen::MatrixXd _Phi_A;
-    Eigen::MatrixXd _Phi;
+    Eigen::Matrix6d _Phi_B;
+    Eigen::Vector6d _lambda_B;
+    Eigen::Matrix6d _Lambda_B_sqrt;
+    Eigen::Matrix6d _Phi_B_hat;
+    Eigen::Matrix6d _A_hat;
+    Eigen::Matrix6d _Phi_A;
+    Eigen::Matrix6d _Phi;
 
     // Other used matrix
     Eigen::Vector6d _diag;  // matrix sqrt computation
-    Eigen::VectorXd _eigenvalues;   // check positive definiteness
+    Eigen::Vector6d _eigenvalues;   // check positive definiteness
 
-    XBot::MatLogger2::Ptr logger;
+    // Eigen solver
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix6d> _eigen_solver;
+    Eigen::JacobiSVD<Eigen::Matrix6d> _svd;
+
+    //XBot::MatLogger2::Ptr logger;
 
 
     // ==============================================================================
@@ -159,7 +163,7 @@ private:
      * @brief Q_computation will solve a generalized eigenvalue problem. Will internally update the
      * matrix _Q and _K_omega. Refer to documentation for the algorithm explanation
      */
-    Eigen::Matrix6d Q_computation(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
+    Eigen::Matrix6d Q_computation(const Eigen::Matrix6d& A, const Eigen::Matrix6d& B);
 
     /**
      * @brief matrix_sqrt compute the square root of each elements of the matrix
@@ -173,7 +177,7 @@ private:
      * Will print the corresponding results
      * @param matrix is the matrix to check
      */
-    void isPositiveDefinite(const Eigen::MatrixXd& matrix);
+    void isPositiveDefinite(const Eigen::Matrix6d& matrix);
 
     /**
      * @brief Updates the operational space inertia matrix Λ and computes the Cholesky factor Q.

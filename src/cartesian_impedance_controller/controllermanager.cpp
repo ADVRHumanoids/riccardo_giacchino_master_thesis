@@ -123,10 +123,9 @@ void ControllerManager::on_stop()
 
     _robot->move();
 
-
-    for (auto& leg : _legs_controller){
-        leg->reset_logger();
-    }
+//    for (auto& leg : _legs_controller){
+//        leg->reset_logger();
+//    }
 
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
 }
