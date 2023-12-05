@@ -85,6 +85,12 @@ void ControllerManager::on_start()
 
     _robot->move();
 
+    //Reset of the tmp stiffness and damping
+    for (auto joint : joint_names){
+        _stiff_tmp_state[joint] = 0.0;
+        _damp_tmp_state[joint] = 0.0;
+    }
+
     for (auto& leg : _legs_controller){
         leg->set_reference_value();
     }
@@ -118,8 +124,8 @@ void ControllerManager::run()
 void ControllerManager::on_stop()
 {
 
-    _robot->setStiffness(_stiff_initial_state);
-    _robot->setDamping(_damp_initial_state);
+    _robot->setStiffness(_stiff_tmp_state);
+    _robot->setDamping(_damp_tmp_state);
 
     _robot->move();
 

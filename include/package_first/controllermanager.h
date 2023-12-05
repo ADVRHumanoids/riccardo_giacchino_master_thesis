@@ -45,6 +45,7 @@ private:
     vector<string> joint_names;
 
     int _n_joints = 6;  // TODO: find a way to compute it automatically
+
 };
 
 #endif // CONTROLLERMANAGER_H

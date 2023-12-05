@@ -20,7 +20,7 @@ xbotcore_device_configs:
 
 # threads
 xbotcore_threads:
-    rt_main:  {sched: fifo , prio: 60, period: 0.001, core_id: 2}
+    rt_main:  {sched: fifo , prio: 60, period: 0.002, core_id: 2}
     nrt_main: {sched: other, prio: 0 , period: 0.005, core_id: 3}
 
 
@@ -70,8 +70,8 @@ xbotcore_plugins:
       params:
         chain_names: [front_left_leg, front_right_leg, rear_left_leg, rear_right_leg]
         end_effector_links: [contact_1, contact_2, contact_3, contact_4]
-        stiffness_front: [2000.0, 2000.0, 5000.0, 200.0, 200.0, 200.0]
-        stiffness_back: [2000.0, 2000.0, 3000.0, 200.0, 200.0, 200.0]
+        stiffness_front: [2000.0, 2000.0, 5000.0, 500.0, 500.0, 500.0]
+        stiffness_back: [2000.0, 2000.0, 3000.0, 500.0, 500.0, 500.0]
         damping: 1.0 # critical damping
     
     ec_ros: {thread: nrt_main, type: ec_ros}
