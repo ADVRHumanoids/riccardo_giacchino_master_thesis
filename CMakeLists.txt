@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+
 find_package(cartesian_interface REQUIRED)
 find_package(xbot2 REQUIRED)
 #find_package(awesome_utils REQUIRED)
@@ -90,15 +91,16 @@ target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_L
 
 ## Cartesian impedance controller plugin
 if(${xbot2_FOUND})
-    add_xbot2_plugin(controllermanager
+
+    add_xbot2_plugin(cartesiocontrollermanager
         src/cartesian_impedance_controller/controllermanager.cpp)
 
-    target_link_libraries(controllermanager
+    target_link_libraries(cartesiocontrollermanager
         PRIVATE
         imp_controller
         xbot2::xbot2_ros_support)
 
-    install(TARGETS controllermanager
+    install(TARGETS cartesiocontrollermanager
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     )
 endif()
