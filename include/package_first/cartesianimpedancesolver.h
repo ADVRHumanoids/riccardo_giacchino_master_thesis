@@ -2,6 +2,8 @@
 #define CARTESIANIMPEDANCESOLVER_H
 
 #include <cartesianimpedancecontroller.h>
+#include <cartesian_interface/sdk/SolverPlugin.h>
+
 
 using namespace Cartesian;
 using namespace std;

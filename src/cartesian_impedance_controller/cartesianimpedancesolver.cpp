@@ -31,13 +31,13 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
 
     }
 
-    _effort = Eigen::VectorXd::Zero(46);
+    _effort = Eigen::VectorXd::Zero(_model->getJointNum());
 
 }
 
 bool CartesianImpedanceSolver::update(double time, double period){
 
-    _effort = Eigen::VectorXd::Zero(46); // reset to zero the effort
+    _effort = Eigen::VectorXd::Zero(_model->getJointNum()); // reset to zero the effort
 
     for (auto& leg : _legs_controller){
 
@@ -49,3 +49,5 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     return true;
 }
+
+CARTESIO_REGISTER_SOLVER_PLUGIN(CartesianImpedanceSolver, ImpSolver);

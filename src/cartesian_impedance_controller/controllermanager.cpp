@@ -5,13 +5,67 @@ bool ControllerManager::on_initialize()
 
     _robot->sense();
 
-    _model = ModelInterface::getModel(_robot->getConfigOptions());
+    auto ik_pb_yaml = YAML::LoadFile(getParamOrThrow<string>("~stack_path"));
 
-    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+    _ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<Parameters>(_dt),  //WARNING: handle _dt
+                                     _model);
 
-    _model->update();
+    ProblemDescription pb(ik_pb_yaml, _ctx);
 
-    /* Read stiffness value from YAML file */
+    _tasks = pb.getTask(pb.getNumTasks());
+
+    for (auto task : _tasks){
+
+        auto tmp_task = std::dynamic_pointer_cast<InteractionTask>(task);
+
+        if (tmp_task == nullptr)
+            cerr << "[ERROR]: the cast result in a null pointer" << endl;
+        else
+            _tasks_casted.push_back(tmp_task);   // cast into Interaction task
+
+    }
+
+    auto urdf_model = _model->getUrdf();
+
+    for (auto task : _tasks_casted) {
+
+        string end_link = task->getDistalLink();
+
+        while (end_link != task->getBaseLink()) {
+
+            auto link = urdf_model.getLink(end_link);
+            auto parent_joint = link->parent_joint;
+
+            if (parent_joint == nullptr) {
+                cerr << "[ERROR]: null pointer to parent joint on link " << end_link << endl;
+                return false;
+
+            } else if (!_robot->hasJoint(parent_joint->name)) {
+                cerr << "[ERROR]: robot does not have joint " << parent_joint->name << endl;
+                return false;
+
+            } else {
+                joint_names.push_back(parent_joint->name);
+                _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
+                _stiff_tmp_state[parent_joint->name] = 0.0;
+                _damp_tmp_state[parent_joint->name] = 0.0;
+            }
+
+            end_link = link->getParent()->name;
+
+        }
+    }
+
+
+//    _model = ModelInterface::getModel(_robot->getConfigOptions());
+
+//    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+
+//    _model->update();
+
+    /*
+
+    // Read stiffness value from YAML file
     vector<string> leg_chains = getParamOrThrow<vector<string>>("~chain_names");
     vector<string> _end_effector_links = getParamOrThrow<vector<string>>("~end_effector_links");
     vector<double> stiffness_front = getParamOrThrow<vector<double>>("~stiffness_front");
@@ -64,6 +118,8 @@ bool ControllerManager::on_initialize()
 
     setDefaultControlMode(_ctrl_map);
 
+    */
+
     return true;
 
 }
@@ -89,10 +145,6 @@ void ControllerManager::on_start()
     for (auto joint : joint_names){
         _stiff_tmp_state[joint] = 0.0;
         _damp_tmp_state[joint] = 0.0;
-    }
-
-    for (auto& leg : _legs_controller){
-        leg->set_reference_value();
     }
 
 }

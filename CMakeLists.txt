@@ -40,8 +40,13 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES}) #awesome_utils::awesome_utils)
 
 add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
-
 target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2) # awesome_utils::awesome_utils)
+
+add_library(CartesianInterfaceSolverImpSolver SHARED src/cartesian_impedance_controller/cartesianimpedancesolver.cpp)
+target_link_libraries(CartesianInterfaceSolverImpSolver ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}) # awesome_utils::awesome_utils)
+
+install(TARGETS CartesianInterfaceSolverImpSolver
+    DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
 ### First project - setup_node
 #add_executable(setup_node src/setup.cpp)

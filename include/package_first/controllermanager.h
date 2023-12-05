@@ -2,10 +2,10 @@
 #define CONTROLLERMANAGER_H
 
 #include <cartesianimpedancecontroller.h>
-#include <xbot_msgs/JointCommand.h>
-#include <xbot2/ros/ros_support.h>
+#include <cartesianimpedancesolver.h>
+#include <urdf_model/model.h>
 
-using namespace XBot;
+using namespace XBot::Cartesian;
 
 class ControllerManager : public ControlPlugin
 {
@@ -23,28 +23,22 @@ public:
 
 private:
 
+
+
     std::map<std::string, ControlMode> _ctrl_map;
 
-    ModelInterface::Ptr _model;
-
-    // ROS related
-    std::unique_ptr<RosSupport> _ros;
-    PublisherPtr<xbot_msgs::JointCommand> _pub;
-
-    //std::vector<CartesianImpedanceController> _legs_controller;
-
-    std::vector<std::unique_ptr<CartesianImpedanceController>> _legs_controller;
-
-    vector<string> _end_effector_links;
-
-    vector<Eigen::Vector6d> _stiffness;
+    XBot::ModelInterface::Ptr _model;
 
     JointNameMap _stiff_initial_state, _damp_initial_state;
     JointNameMap _stiff_tmp_state, _damp_tmp_state;
 
     vector<string> joint_names;
 
-    int _n_joints = 6;  // TODO: find a way to compute it automatically
+    shared_ptr<CartesianImpedanceSolver> _solver;
+    shared_ptr<XBot::Cartesian::Context> _ctx;
+    double _dt;
+    AggregatedTask _tasks;
+    std::vector<std::shared_ptr<InteractionTask>> _tasks_casted;
 
 };
 
