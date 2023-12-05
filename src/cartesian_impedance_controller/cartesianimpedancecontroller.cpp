@@ -64,6 +64,59 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     //logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat");
 }
 
+CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr model,
+                                                           Eigen::Matrix6d stiffness,
+                                                           Eigen::Matrix6d damping_factor,
+                                                           const string end_effector,
+                                                           const string base_link):
+    _model(model),
+    _K(stiffness),
+    _D_zeta(damping_factor),
+    _end_effector_link(end_effector),
+    _root_link(base_link)
+{
+    // Inizialize Jacobian and Joint inertia matrix
+    _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
+    _model->getInertiaMatrix(_B_inv);
+
+    // Inizialize all parameteres to zero
+    _x_real = _x_ref = Eigen::Affine3d::Identity();
+    _xdot_real = _xdot_prec = Eigen::Vector6d::Zero(6);
+    _edot = _e = Eigen::Vector6d::Zero(6);
+
+    // Initialize all matrix to identity matrix
+    _Q = _K_omega = _D = _op_sp_inertia = Eigen::Matrix6d::Identity();
+
+    // SVD decompositin variable initialization
+    _U = _V = Eigen::MatrixXd::Identity(6,6);
+    _S = _S_pseudo_inverse = Eigen::VectorXd::Zero(6);
+
+    // Other initialization
+    _rotational_error = Eigen::Matrix3d::Identity(3, 3);
+    _axis = Eigen::Vector3d::Zero();
+    _angle = 0.0;
+    _diag = _eigenvalues = Eigen::Vector6d::Zero();
+
+    // Controller
+    _force = Eigen::Vector6d::Zero(6);
+    _torque = Eigen::VectorXd::Zero(46);
+
+    // SVD initialization
+    _U = _V = Eigen::Matrix6d::Identity(6, 6);
+    _S = _S_pseudo_inverse = Eigen::Vector6d::Zero(6);
+
+    // Generalized eigenvalue problem variables initialization
+    _Phi = _Phi_A = _Phi_B = _Phi_B_hat = _A_hat = _Lambda_B_sqrt = Eigen::Matrix6d::Identity(6, 6);
+    _lambda_B = Eigen::Vector6d::Zero(6);
+
+    //Print of configuration parameters
+    cout << "Configuration parameters:" << endl;
+    cout << "Root link: " << _root_link << endl << "End effector link: " << _end_effector_link << endl;
+    cout << "Stiffness\n" << _K << endl;
+    cout << "Damping\n" << _D_zeta << endl;
+    cout << "==================" << endl;
+}
+
 // ==============================================================================
 // Additional Functions
 // ==============================================================================
@@ -165,9 +218,10 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     //cout << "Force:\n" << force << endl;
 
     // The model works with 46 joints (first 6 of the floating base), while the robot works with 40 joints
-    // (exclude the floating base joints), so this returns all the torque excluding the floating base part
+    // (exclude the floating base joints). If working with RobotInterface then return _torque.tail(40), otherwise
+    // return all the vector _torque
 
-    return _torque.tail(40);
+    return _torque;
 }
 
 Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix)
