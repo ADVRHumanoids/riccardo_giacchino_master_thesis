@@ -5,6 +5,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
     CartesianInterfaceImpl(ik_problem, context)
 {
 
+    // Extract tasks and cast to InteractionTask
     _tasks = ik_problem.getTask(ik_problem.getNumTasks()-1);
 
     for (auto task : _tasks){
@@ -18,6 +19,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
 
     }
 
+    // Create controller for each InteractionTask
     for (auto& task_casted : _tasks_casted){
 
         Impedance imp = task_casted->getImpedance();
@@ -33,7 +35,6 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
 
     // Variable Initialization
     _effort = Eigen::VectorXd::Zero(_model->getJointNum());
-
     _Tref = Eigen::Affine3d::Identity();
 
 }

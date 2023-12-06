@@ -23,39 +23,49 @@ public:
 
 private:
 
-    std::map<std::string, ControlMode> _ctrl_map;
+    std::map<std::string, ControlMode> _ctrl_map;   // map for the set the Control mode for each joint
 
-    double _zero = 0.0; // it s the value at which we want to set the stiffness
-                        //and damping to deactivate the joint impedance controller
+    double _zero = 0.0; // it is the value at which we want to set the stiffness
+                        // and damping to deactivate the joint impedance controller.
+                        // If 0.0 the joint impedance controller is disabled, usually that's what we want, that is why is by default
 
     XBot::ModelInterface::Ptr _model;
-    Eigen::VectorXd _q, _qdot;
 
     JointNameMap _stiff_initial_state, _damp_initial_state;
     JointNameMap _stiff_tmp_state, _damp_tmp_state;
-    JointNameMap _motor_position;
 
-    vector<string> joint_names;
+    //JointNameMap _motor_position;
+
+    shared_ptr<XBot::Cartesian::Context> _ctx;
 
     shared_ptr<CartesianInterfaceImpl> _solver;
-    shared_ptr<XBot::Cartesian::Context> _ctx;
 
     double _dt, _time;
 
     Eigen::VectorXd _torque;
 
-
-
     AggregatedTask _tasks;
     std::vector<std::shared_ptr<InteractionTask>> _tasks_casted;
 
+    /**
+     * @brief Retrieves tasks and casts them into InteractionTask objects.
+     *
+     * This function iterates through the stored tasks and attempts to cast each task
+     * from the generic task type to the InteractionTask type using dynamic_pointer_cast.
+     * If successful, the task is added to the list of InteractionTask objects.
+     *
+     */
+    void get_task();
+
+    /**
+     * @brief joint_map_generator find the list of joints that are contained in a chain defined by a root link and end effector link
+     *
+     * It traverses the URDF model, starting from the distal link of the chain and iterates until it reaches
+     * the base link or 'pelvis', assigning control modes for each encountered joint as well as initialize to
+     * zero the stiffness and dammping for that joint.
+     *
+     */
     void joint_map_generator();
-
-    void get_task_names();
-
-    void notify_starting();
-
-    void notify_ending();
 
 };
 

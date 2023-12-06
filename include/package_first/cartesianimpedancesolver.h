@@ -37,12 +37,34 @@ public:
     // Constructor
     // ==============================================================================
 
+    /**
+     * @brief Constructs a Cartesian Impedance Solver instance using provided problem description and context.
+     *
+     * This constructor initializes a Cartesian Impedance Solver instance by extracting tasks from the provided
+     * problem description. It casts tasks into InteractionTask objects. For each task, it retrieves impedance
+     * values, creating a corresponding Cartesian Impedance Controller and associating it with the task.
+     *
+     * @param ik_problem The problem description used to initialize the solver.
+     * @param context.
+     */
     CartesianImpedanceSolver(ProblemDescription ik_problem, XBot::Cartesian::Context::Ptr context);
 
     // ==============================================================================
     // Additional functions
     // ==============================================================================
 
+    /**
+     * @brief Updates the Cartesian impedance solver based on controller information.
+     *
+     * This function updates the Cartesian impedance solver using controller information.
+     * It resets the effort to zero, iterates through the controllers, retrieves impedance
+     * and pose reference values, sets stiffness, damping, and reference values for each controller,
+     * computes torque, and sets joint effort in the model.
+     * Additionally, this function ensures that information regarding stiffness, damping, and
+     * reference pose are updated in case of modifications made through specific topics.
+     *
+     * @return Boolean indicating the success of the update operation.
+    */
     bool update(double time, double period) override;
 
 private:
@@ -51,17 +73,16 @@ private:
     // Variables
     // ==============================================================================
 
-    std::vector<std::unique_ptr<CartesianImpedanceController>> _legs_controller;
+    AggregatedTask _tasks;  // vector of tasks obtained from the problem description
 
-    AggregatedTask _tasks;
+    std::vector<std::shared_ptr<InteractionTask>> _tasks_casted;    // tasks casted into Interaction Task
 
+    // Map allows for the association of each InteractionTask pointer with a unique Cartesian Impedance Controller
     map<std::shared_ptr<InteractionTask>, std::unique_ptr<CartesianImpedanceController>> _controller;
-
-    std::vector<std::shared_ptr<InteractionTask>> _tasks_casted;
 
     Eigen::VectorXd _effort;
 
-    Eigen::Affine3d _Tref;
+    Eigen::Affine3d _Tref;  // to set the pose reference
 
 
 };

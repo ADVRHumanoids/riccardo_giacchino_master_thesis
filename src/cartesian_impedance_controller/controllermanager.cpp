@@ -6,32 +6,36 @@ bool ControllerManager::on_initialize()
 
     _robot->sense();
 
+    // Model creation
     _model = ModelInterface::getModel(_robot->getConfigOptions());
-
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
-
     _model->update();
 
+    // Take the path to the problem definition file
     auto ik_pb_yaml = YAML::LoadFile(getParamOrThrow<string>("~stack_path"));
 
     _ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<Parameters>(_dt),  //WARNING: handle _dt
                                      _model);
-
     ProblemDescription pb(ik_pb_yaml, _ctx);
 
+    // Solver creation
     _solver = CartesianInterfaceImpl::MakeInstance("ImpSolver",
                                                    pb,
                                                    _ctx);
+
+    // Obtaining the tasks from the problem description
     _tasks = pb.getTask(pb.getNumTasks()-1);
 
-    get_task_names();
+    // Extract task names
+    get_task();
 
+    // Create the joint map
     joint_map_generator();
 
+    // Set control mode for the joints found in the previous function
     setDefaultControlMode(_ctrl_map);
 
     // Initialize usefull variable
-    _q = _qdot = Eigen::VectorXd::Zero(_model->getJointNum());
     _torque = Eigen::VectorXd::Zero(_model->getJointNum());
 
     return true;
@@ -41,29 +45,25 @@ bool ControllerManager::on_initialize()
 void ControllerManager::on_start()
 {
 
+    // Robot and Model update
     _robot->sense();
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
     _model->update();
 
+    // Memorize the initial joint stiffness and damping
     _robot->getStiffness(_stiff_initial_state);
     _robot->getDamping(_damp_initial_state);
 
+    // Set joint stiffness and damping to zero in order to disable joint impedance controller
     if (!_robot->setStiffness(_stiff_tmp_state) || !_robot->setDamping(_damp_tmp_state))
         cout << "[ERROR]: unable to set stiffness or damping value" << endl;
 
     _robot->move();
 
-    // Reset of the tmp stiffness and damping
-    for (auto joint : joint_names){
-        _stiff_tmp_state[joint] = _zero;
-        _damp_tmp_state[joint] = _zero;
-    }
-
-    cout << "[INFO]: Cartesian impedance control is starting!" << endl;
-
     _time = 0;
     _solver->reset(_time);
 
+    cout << "[INFO]: Cartesian impedance control is starting!" << endl;
 }
 
 void ControllerManager::run()
@@ -72,11 +72,13 @@ void ControllerManager::run()
     _robot->sense();
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);    
 
-    // CartesIO pluing update
+    // CartesIO pluing update will compute the torque base on the controller and set them into the model
     _solver->update(_time, _dt);
 
+    // Get the torque from the model
     _model->getJointEffort(_torque);
 
+    // Set them in the robot
     _robot->setEffortReference(_torque.tail(_robot->getJointNum()));
 
     _model->update();
@@ -85,13 +87,13 @@ void ControllerManager::run()
 //    _model->getMotorPosition(_motor_position);
 //    _robot->setPositionReference(_motor_position);
 
-    // Disable joint impedance controller
+    // Keep disabled joint impedance controller
     _robot->setStiffness(_stiff_tmp_state);
     _robot->setDamping(_damp_tmp_state);
 
     _robot->move();
 
-    //
+    // Update the time for the solver
     _time += _dt;
 
 }
@@ -99,7 +101,7 @@ void ControllerManager::run()
 void ControllerManager::on_stop()
 {
 
-    // TODO: create ramping transition for stiffness and damping
+    // Reset the joint stiffness and damping to initial values in order to enable joint impedance controller
     _robot->setStiffness(_stiff_initial_state);
     _robot->setDamping(_damp_initial_state);
 
@@ -108,13 +110,14 @@ void ControllerManager::on_stop()
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
 }
 
-void ControllerManager::get_task_names(){
+void ControllerManager::get_task(){
 
-    // Get all the task name
     for (auto task : _tasks){
 
+        // Cast from Generic task to Interaction task
         auto tmp_task = std::dynamic_pointer_cast<InteractionTask>(task);
 
+        // Check null pointer
         if (tmp_task == nullptr)
             cerr << "[ERROR]: the cast result in a null pointer" << endl;
         else
@@ -125,8 +128,6 @@ void ControllerManager::get_task_names(){
 }
 
 void ControllerManager::joint_map_generator(){
-
-    // Construct joint map to set the stiffness and damping
 
     auto urdf_model = _model->getUrdf();
 
@@ -147,7 +148,6 @@ void ControllerManager::joint_map_generator(){
                 cerr << "[WARNING]: robot does not have joint " << parent_joint->name << endl;
 
             } else {
-                joint_names.push_back(parent_joint->name);
                 _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping() + ControlMode::Position();
                 _stiff_tmp_state[parent_joint->name] = _zero;
                 _damp_tmp_state[parent_joint->name] = _zero;

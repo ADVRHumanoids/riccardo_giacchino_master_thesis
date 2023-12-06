@@ -68,15 +68,21 @@ public:
     // ==============================================================================
 
     /**
-     * @brief set_reference_value sets the reference values used to compute the error in the impedance dynamic
-     * @param acc_ref is the reference acceleration value of the end effector
-     * @param vel_ref is the reference velocity value of the end effector
-     * @param pos_ref is the reference position value of the end effector
+     * @brief Sets the reference value for the Cartesian Impedance Controller.
+     * @param Tref The new reference pose in the form of a rototranslation matrix.
      */
     void set_reference_value(Eigen::Affine3d Tref);
 
+    /**
+     * @brief Sets the stiffness matrix for the Cartesian Impedance Controller.
+     * @param stiffness The stiffness matrix in the form of an Eigen Matrix6d.
+     */
     void set_stiffness(Eigen::Matrix6d stiffness);
 
+    /**
+     * @brief Sets the damping factor matrix for the Cartesian Impedance Controller.
+     * @param damping_factor The damping factor matrix, tipically known as ζ (zeta) is the damping ratio.
+     */
     void set_damping_factor(Eigen::Matrix6d damping_factor);
 
     /**
@@ -231,6 +237,10 @@ private:
      */
     Eigen::Vector3d orientation_error();
 
+    /**
+     * @brief print_config_param displays the configuration parameters of the Cartesian Impedance Controller
+     * associated with a specific task.
+     */
     void print_config_param();
 
 };
