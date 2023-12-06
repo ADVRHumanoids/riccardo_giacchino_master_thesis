@@ -5,7 +5,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
     CartesianInterfaceImpl(ik_problem, context)
 {
 
-    _tasks = ik_problem.getTask(ik_problem.getNumTasks());
+    _tasks = ik_problem.getTask(ik_problem.getNumTasks()-1);
 
     for (auto task : _tasks){
 
@@ -18,20 +18,22 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
 
     }
 
-    for (auto task_casted : _tasks_casted){
+    for (auto& task_casted : _tasks_casted){
 
         Impedance imp = task_casted->getImpedance();
 
-        _legs_controller.push_back(
-            std::make_unique<CartesianImpedanceController>(_model,  // I get this model from CartesianInterfaceImpl that is always kept updated
-                                                           imp.stiffness,
-                                                           imp.damping,
-                                                           task_casted->getDistalLink(),
-                                                           task_casted->getBaseLink()));
+        _controller[task_casted] = std::make_unique<CartesianImpedanceController>(_model,  // always updated
+                                                                                  imp.stiffness,
+                                                                                  imp.damping,
+                                                                                  task_casted->getDistalLink(),
+                                                                                  task_casted->getBaseLink());
 
     }
 
+    // Variable Initialization
     _effort = Eigen::VectorXd::Zero(_model->getJointNum());
+
+    _Tref = Eigen::Affine3d::Identity();
 
 }
 
@@ -39,9 +41,16 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     _effort = Eigen::VectorXd::Zero(_model->getJointNum()); // reset to zero the effort
 
-    for (auto& leg : _legs_controller){
+    for (auto& pair : _controller){
 
-        _effort += leg->compute_torque();
+        pair.first->getImpedance();
+        pair.first->getPoseReference(_Tref);
+
+        _controller[pair.first]->set_stiffness(pair.first->getImpedance().stiffness);
+        _controller[pair.first]->set_damping_factor(pair.first->getImpedance().damping);
+        _controller[pair.first]->set_reference_value(_Tref);
+
+        _effort += _controller[pair.first]->compute_torque();
 
     }
 
@@ -49,5 +58,6 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     return true;
 }
+
 
 CARTESIO_REGISTER_SOLVER_PLUGIN(CartesianImpedanceSolver, ImpSolver);

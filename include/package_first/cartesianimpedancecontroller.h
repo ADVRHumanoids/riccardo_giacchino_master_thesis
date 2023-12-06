@@ -8,7 +8,6 @@
 #include <iostream>
 #include <thread>
 #include <math.h>
-#include <chrono>
 
 #include <cartesian_interface/CartesianInterfaceImpl.h> // For the solver
 #include <RobotInterfaceROS/ConfigFromParam.h>  // Model param config
@@ -18,8 +17,6 @@
 #include <xbot2/hal/dev_ft.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <eigen_conversions/eigen_msg.h>
-#include <matlogger2/matlogger2.h>
 
 // ==============================================================================
 // Namespace
@@ -75,7 +72,11 @@ public:
      * @param vel_ref is the reference velocity value of the end effector
      * @param pos_ref is the reference position value of the end effector
      */
-    void set_reference_value();
+    void set_reference_value(Eigen::Affine3d Tref);
+
+    void set_stiffness(Eigen::Matrix6d stiffness);
+
+    void set_damping_factor(Eigen::Matrix6d damping_factor);
 
     /**
      * @brief reset_logger will reset the logger used to create the .mat file able to plot variable in Matlab
@@ -99,7 +100,6 @@ private:
 
     // Real velocity, position of the end-effector w.r.t. to the root link
     Eigen::Vector6d _xdot_real;
-    Eigen::Vector6d _xdot_prec; // used for the computation of the acceleration that is done by dv/dt
 
     // Error variables
     Eigen::Vector6d _edot, _e;

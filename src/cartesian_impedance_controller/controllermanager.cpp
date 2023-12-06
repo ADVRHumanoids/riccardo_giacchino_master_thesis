@@ -22,8 +22,7 @@ bool ControllerManager::on_initialize()
     _solver = CartesianInterfaceImpl::MakeInstance("ImpSolver",
                                                    pb,
                                                    _ctx);
-
-    _tasks = pb.getTask(pb.getNumTasks());
+    _tasks = pb.getTask(pb.getNumTasks()-1);
 
     get_task_names();
 
@@ -82,10 +81,6 @@ void ControllerManager::run()
 
     _model->update();
 
-    // get effort from model
-    // set effort reference -> on _robot
-
-
     // keep updated the position reference
     _model->getMotorPosition(_motor_position);
     _robot->setPositionReference(_motor_position);
@@ -96,7 +91,7 @@ void ControllerManager::run()
 
     _robot->move();
 
-    // time update
+    //
     _time += _dt;
 
 }
@@ -105,8 +100,8 @@ void ControllerManager::on_stop()
 {
 
     // TODO: create ramping transition for stiffness and damping
-    _robot->setStiffness(_stiff_tmp_state);
-    _robot->setDamping(_damp_tmp_state);
+    _robot->setStiffness(_stiff_initial_state);
+    _robot->setDamping(_damp_initial_state);
 
     _robot->move();
 
@@ -132,23 +127,24 @@ void ControllerManager::get_task_names(){
 void ControllerManager::joint_map_generator(){
 
     // Construct joint map to set the stiffness and damping
-    // TODO: test correct working
+
     auto urdf_model = _model->getUrdf();
 
     for (auto task : _tasks_casted) {
 
         string end_link = task->getDistalLink();
 
-        while (end_link != task->getBaseLink()) {
+        while (end_link != task->getBaseLink() && end_link != "pelvis") {
 
             auto link = urdf_model.getLink(end_link);
+
             auto parent_joint = link->parent_joint;
 
             if (parent_joint == nullptr) {
                 cerr << "[ERROR]: null pointer to parent joint on link " << end_link << endl;
 
             } else if (!_robot->hasJoint(parent_joint->name)) {
-                cerr << "[ERROR]: robot does not have joint " << parent_joint->name << endl;
+                cerr << "[WARNING]: robot does not have joint " << parent_joint->name << endl;
 
             } else {
                 joint_names.push_back(parent_joint->name);

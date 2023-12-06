@@ -22,7 +22,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 
     // Inizialize all parameteres to zero
     _x_real = _x_ref = Eigen::Affine3d::Identity();
-    _xdot_real = _xdot_prec = Eigen::Vector6d::Zero(6);
+    _xdot_real = Eigen::Vector6d::Zero(6);
     _edot = _e = Eigen::Vector6d::Zero(6);
 
     // Initialize all matrix to identity matrix
@@ -53,9 +53,9 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     //Print of configuration parameters
     cout << "Configuration parameters:" << endl;
     cout << "Root link: " << _root_link << endl << "End effector link: " << _end_effector_link << endl;
-    cout << "Stiffness\n" << _K << endl;
-    cout << "Damping\n" << _D_zeta << endl;
-    cout << "==================" << endl;
+    cout << "Stiffness: [" << _K.diagonal().transpose() << "]" << endl;
+    cout << "Damping: [" << _D_zeta.diagonal().transpose() << "]" << endl;
+    cout << "=========================================================" << endl;
 }
 
 // ==============================================================================
@@ -156,7 +156,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 
     //Debug print
     //cout << torque.transpose() << endl;
-    //cout << "Force:\n" << force << endl;
+    //cout << "Force:\n" << _force << endl;
 
     // The model works with 46 joints (first 6 of the floating base), while the robot works with 40 joints
     // (exclude the floating base joints). If working with RobotInterface then return _torque.tail(40), otherwise
@@ -283,15 +283,16 @@ double CartesianImpedanceController::f(double x){
 // Setter and Getter
 // ==============================================================================
 
-void CartesianImpedanceController::set_reference_value()
+void CartesianImpedanceController::set_reference_value(Eigen::Affine3d Tref)
 {
-
-    _model->getPose(_end_effector_link, _root_link, _x_ref);
-    _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
-
+    //_model->getPose(_end_effector_link, _root_link, _x_ref);
+    _x_ref = Tref;
 }
 
-//void CartesianImpedanceController::reset_logger(){
-//    logger.reset();
-//}
+void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
+    _K = stiffness;
+}
 
+void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_factor){
+    _D_zeta = damping_factor;
+}
