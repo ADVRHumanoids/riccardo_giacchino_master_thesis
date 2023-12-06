@@ -44,14 +44,6 @@ public:
     // Constructor and Destructor
     // ==============================================================================
 
-    CartesianImpedanceController();
-
-    CartesianImpedanceController(ModelInterface::Ptr model,
-                                 Eigen::Matrix6d stiffness,
-                                 const string end_effector,
-                                 const string base_link,
-                                 double damping_factor);
-
     CartesianImpedanceController(ModelInterface::Ptr model,
                                  Eigen::Matrix6d stiffness,
                                  Eigen::Matrix6d damping_factor,

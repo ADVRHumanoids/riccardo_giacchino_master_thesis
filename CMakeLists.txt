@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(cartesian_interface REQUIRED)
 find_package(xbot2 REQUIRED)
-#find_package(awesome_utils REQUIRED)
 #find_package(XBotInterface REQUIRED)
 
 catkin_package(
@@ -26,27 +25,22 @@ include_directories(
   ${cartesian_interface_INCLUDE_DIRS}
   ${xbot2_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
- # ${XBotInterface_INCLUDE_DIRS}
+  #${XBotInterface_INCLUDE_DIRS}
 )
 
 
-# add_library(${PROJECT_NAME} src/motiongenerator.cpp
-                            # src/basestategetter.cpp
-                            # src/emafilter.cpp
-                            # src/lowpassfilter.cpp
-                            # src/grahamscanconvexhull.cpp
-                            # src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
-
-# target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES}) #awesome_utils::awesome_utils)
-
 add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
-target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2) # awesome_utils::awesome_utils)
+target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES})
+
+install(TARGETS imp_controller
+    DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
 add_library(CartesianInterfaceSolverImpSolver SHARED src/cartesian_impedance_controller/cartesianimpedancesolver.cpp)
-target_link_libraries(CartesianInterfaceSolverImpSolver ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}) # awesome_utils::awesome_utils)
+target_link_libraries(CartesianInterfaceSolverImpSolver imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${XBotInterface_LIBRARIES})
 
 install(TARGETS CartesianInterfaceSolverImpSolver
     DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+
 
 ### First project - setup_node
 #add_executable(setup_node src/setup.cpp)
