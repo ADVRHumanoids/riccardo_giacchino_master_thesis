@@ -1,11 +1,23 @@
 #ifndef CONTROLLERMANAGER_H
 #define CONTROLLERMANAGER_H
 
+// ==============================================================================
+// Include
+// ==============================================================================
+
 #include <cartesianimpedancecontroller.h>
 #include <cartesianimpedancesolver.h>
 #include <urdf_model/model.h>
 
+// ==============================================================================
+// Namespace
+// ==============================================================================
+
 using namespace XBot::Cartesian;
+
+// ==============================================================================
+// Class
+// ==============================================================================
 
 class ControllerManager : public ControlPlugin
 {
@@ -22,6 +34,10 @@ public:
     void on_stop() override;
 
 private:
+
+    // ==============================================================================
+    // Variables
+    // ==============================================================================
 
     std::map<std::string, ControlMode> _ctrl_map;   // map for the set the Control mode for each joint
 
@@ -46,6 +62,10 @@ private:
 
     AggregatedTask _tasks;
     std::vector<std::shared_ptr<InteractionTask>> _tasks_casted;
+
+    // ==============================================================================
+    // Additional Private Functions
+    // ==============================================================================
 
     /**
      * @brief Retrieves tasks and casts them into InteractionTask objects.

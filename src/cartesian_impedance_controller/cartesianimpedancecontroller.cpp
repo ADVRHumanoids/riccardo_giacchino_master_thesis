@@ -70,8 +70,7 @@ void CartesianImpedanceController::update_inertia()
     // Λ = (J * B¯¹ * J^T)¯¹
     _op_sp_inertia.noalias() = _J * _B_inv.inverse() * _J.transpose();
 
-    /*
-     * controlling the legs will cause a singularity in the Jacobian (no joint on the wheel),
+    /* Make a controller on the legs will cause a singularity in the Jacobian (no joint on the wheel),
      * resulting in a non invertible task space inertia matrix. A possible solution is to
      * invert the matrix using the inverse of the SVD decomposition (that since Λ is symmetric
      * is equal to a spectral theorem UVU^T), quick and dirty method

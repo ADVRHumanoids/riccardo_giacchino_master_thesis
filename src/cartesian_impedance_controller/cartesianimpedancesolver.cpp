@@ -1,5 +1,9 @@
 #include "cartesianimpedancesolver.h"
 
+// ==============================================================================
+// Constructor
+// ==============================================================================
+
 CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem,
                                                    XBot::Cartesian::Context::Ptr context):
     CartesianInterfaceImpl(ik_problem, context)
@@ -39,6 +43,10 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
 
 }
 
+// ==============================================================================
+// Additional Functions
+// ==============================================================================
+
 bool CartesianImpedanceSolver::update(double time, double period){
 
     _effort = Eigen::VectorXd::Zero(_model->getJointNum()); // reset to zero the effort
@@ -60,6 +68,5 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     return true;
 }
-
 
 CARTESIO_REGISTER_SOLVER_PLUGIN(CartesianImpedanceSolver, ImpSolver);

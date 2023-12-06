@@ -1,5 +1,9 @@
 #include "controllermanager.h"
 
+// ==============================================================================
+// Real-Time plugin required functions
+// ==============================================================================
+
 bool ControllerManager::on_initialize()
 {
     _dt = getPeriodSec();
@@ -84,8 +88,8 @@ void ControllerManager::run()
     _model->update();
 
     // keep updated the position reference
-//    _model->getMotorPosition(_motor_position);
-//    _robot->setPositionReference(_motor_position);
+    //_model->getMotorPosition(_motor_position);
+    //_robot->setPositionReference(_motor_position);
 
     // Keep disabled joint impedance controller
     _robot->setStiffness(_stiff_tmp_state);
@@ -109,6 +113,10 @@ void ControllerManager::on_stop()
 
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
 }
+
+// ==============================================================================
+// Additional Functions
+// ==============================================================================
 
 void ControllerManager::get_task(){
 
