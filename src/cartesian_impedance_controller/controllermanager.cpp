@@ -82,8 +82,8 @@ void ControllerManager::run()
     _model->update();
 
     // keep updated the position reference
-    _model->getMotorPosition(_motor_position);
-    _robot->setPositionReference(_motor_position);
+//    _model->getMotorPosition(_motor_position);
+//    _robot->setPositionReference(_motor_position);
 
     // Disable joint impedance controller
     _robot->setStiffness(_stiff_tmp_state);

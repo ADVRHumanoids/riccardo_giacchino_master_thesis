@@ -45,7 +45,8 @@ public:
                                  Eigen::Matrix6d stiffness,
                                  Eigen::Matrix6d damping_factor,
                                  const string end_effector,
-                                 const string base_link);
+                                 const string base_link,
+                                 string task_name);
 
     //~CartesianImpedanceController();
 
@@ -92,6 +93,7 @@ private:
 
     string _root_link = "base_link";    // name of the root link, base_link by default
     string _end_effector_link = ""; // name of the end effector link, empty string by default
+    string _task_name = "";
 
     XBot::ModelInterface::Ptr _model;
 
@@ -228,6 +230,8 @@ private:
      * @return Will return the orientation angle computed as Ref - Real
      */
     Eigen::Vector3d orientation_error();
+
+    void print_config_param();
 
 };
 

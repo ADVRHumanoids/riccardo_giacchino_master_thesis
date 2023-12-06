@@ -26,7 +26,8 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
                                                                                   imp.stiffness,
                                                                                   imp.damping,
                                                                                   task_casted->getDistalLink(),
-                                                                                  task_casted->getBaseLink());
+                                                                                  task_casted->getBaseLink(),
+                                                                                  task_casted->getName());
 
     }
 

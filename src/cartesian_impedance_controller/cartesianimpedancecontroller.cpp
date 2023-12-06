@@ -9,12 +9,14 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
                                                            Eigen::Matrix6d stiffness,
                                                            Eigen::Matrix6d damping_factor,
                                                            const string end_effector,
-                                                           const string base_link):
+                                                           const string base_link,
+                                                           string task_name):
     _model(model),
     _K(stiffness),
     _D_zeta(damping_factor),
     _end_effector_link(end_effector),
-    _root_link(base_link)
+    _root_link(base_link),
+    _task_name(task_name)
 {
     // Inizialize Jacobian and Joint inertia matrix
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
@@ -51,11 +53,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     _lambda_B = Eigen::Vector6d::Zero(6);
 
     //Print of configuration parameters
-    cout << "Configuration parameters:" << endl;
-    cout << "Root link: " << _root_link << endl << "End effector link: " << _end_effector_link << endl;
-    cout << "Stiffness: [" << _K.diagonal().transpose() << "]" << endl;
-    cout << "Damping: [" << _D_zeta.diagonal().transpose() << "]" << endl;
-    cout << "=========================================================" << endl;
+    print_config_param();
 }
 
 // ==============================================================================
@@ -279,6 +277,18 @@ double CartesianImpedanceController::f(double x){
 
 }
 
+void CartesianImpedanceController::print_config_param(){
+
+    cout << "[OK] Successfully created controller for task " << _task_name << endl;
+    cout << "CONFIGURATION PARAMETERS:" << endl;
+    cout << "- ROOT LINK: " << _root_link << endl;
+    cout << "- END EFFECTOR LINK: " << _end_effector_link << endl;
+    cout << "- STIFFNESS: [" << _K.diagonal().transpose() << "]" << endl;
+    cout << "- DAMPING: [" << _D_zeta.diagonal().transpose() << "]" << endl;
+    cout << "=====================================================" << endl;
+
+}
+
 // ==============================================================================
 // Setter and Getter
 // ==============================================================================
@@ -295,4 +305,5 @@ void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
 
 void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_factor){
     _D_zeta = damping_factor;
+
 }
