@@ -69,11 +69,6 @@ xbotcore_plugins:
       thread: rt_main
       params:
         stack_path: /home/riccardo/forest_ws/src/riccardo_giacchino_master_thesis/src/cartesian_impedance_controller/stack_problem.yaml
-#        chain_names: [front_left_leg, front_right_leg, rear_left_leg, rear_right_leg]
-#        end_effector_links: [contact_1, contact_2, contact_3, contact_4]
-#        stiffness_front: [2000.0, 2000.0, 5000.0, 500.0, 500.0, 500.0]
-#        stiffness_back: [2000.0, 2000.0, 3000.0, 500.0, 500.0, 500.0]
-#        damping: 1.0 # critical damping
     
     ec_ros: {thread: nrt_main, type: ec_ros}
 

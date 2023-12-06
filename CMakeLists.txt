@@ -97,15 +97,15 @@ install(TARGETS CartesianInterfaceSolverImpSolver
 ## Cartesian impedance controller plugin
 if(${xbot2_FOUND})
 
-    add_xbot2_plugin(cartesiocontrollermanager
+    add_xbot2_plugin(controllermanager
         src/cartesian_impedance_controller/controllermanager.cpp)
 
-    target_link_libraries(cartesiocontrollermanager
+    target_link_libraries(controllermanager
         PRIVATE
         imp_controller
         xbot2::xbot2_ros_support)
 
-    install(TARGETS cartesiocontrollermanager
+    install(TARGETS controllermanager
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     )
 endif()
