@@ -35,7 +35,8 @@ target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_L
 install(TARGETS imp_controller
     DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
-add_library(CartesianInterfaceSolverImpSolver SHARED src/cartesian_impedance_controller/cartesianimpedancesolver.cpp)
+add_library(CartesianInterfaceSolverImpSolver SHARED src/cartesian_impedance_controller/cartesianimpedancesolver.cpp
+    src/cartesian_impedance_controller/cartesio_ros_wrapper.h)
 target_link_libraries(CartesianInterfaceSolverImpSolver imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${XBotInterface_LIBRARIES})
 
 install(TARGETS CartesianInterfaceSolverImpSolver
@@ -59,8 +60,8 @@ install(TARGETS CartesianInterfaceSolverImpSolver
 #target_link_libraries(base_motion_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 ## Seventh project - PI controller for velocity
-#add_executable(vel_control_node src/velocity_controller_node.cpp)
-#target_link_libraries(vel_control_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES})
+add_executable(vel_control_node src/learning_src/velocity_controller_node.cpp)
+target_link_libraries(vel_control_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES})
 
 ## Sixth project - COM position and projection
 #add_executable(stability_node src/stability_node.cpp)

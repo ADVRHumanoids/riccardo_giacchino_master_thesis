@@ -9,6 +9,8 @@
 #include <cartesianimpedancesolver.h>
 #include <urdf_model/model.h>
 
+#include "../../src/cartesian_impedance_controller/cartesio_ros_wrapper.h"
+
 // ==============================================================================
 // Namespace
 // ==============================================================================
@@ -33,6 +35,8 @@ public:
 
     void on_stop() override;
 
+    void on_close() override;
+
 private:
 
     // ==============================================================================
@@ -50,7 +54,7 @@ private:
     JointNameMap _stiff_initial_state, _damp_initial_state;
     JointNameMap _stiff_tmp_state, _damp_tmp_state;
 
-    //JointNameMap _motor_position;
+    JointNameMap _motor_position;
 
     shared_ptr<XBot::Cartesian::Context> _ctx;
 
@@ -60,8 +64,12 @@ private:
 
     Eigen::VectorXd _torque;
 
+    Eigen::VectorXd _qhome;
+
     AggregatedTask _tasks;
     std::vector<std::shared_ptr<InteractionTask>> _tasks_casted;
+
+    std::unique_ptr<CartesioRosWrapper> _ros_wrapper;
 
     // ==============================================================================
     // Additional Private Functions

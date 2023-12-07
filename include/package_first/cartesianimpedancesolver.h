@@ -1,6 +1,10 @@
 #ifndef CARTESIANIMPEDANCESOLVER_H
 #define CARTESIANIMPEDANCESOLVER_H
 
+// ==============================================================================
+// Include
+// ==============================================================================
+
 #include <cartesianimpedancecontroller.h>
 #include <iostream>
 #include <thread>
@@ -19,10 +23,12 @@
 #include <matlogger2/matlogger2.h>
 #include <cartesian_interface/sdk/SolverPlugin.h>
 
+// ==============================================================================
+// Namespace
+// ==============================================================================
 
 using namespace Cartesian;
 using namespace std;
-
 
 // ==============================================================================
 // Class

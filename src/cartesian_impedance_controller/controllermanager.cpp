@@ -42,6 +42,9 @@ bool ControllerManager::on_initialize()
     // Initialize usefull variable
     _torque = Eigen::VectorXd::Zero(_model->getJointNum());
 
+    //
+    _ros_wrapper = std::make_unique<CartesioRosWrapper>(_solver, "ci", "cartesian");
+
     return true;
 
 }
@@ -67,11 +70,16 @@ void ControllerManager::on_start()
     _time = 0;
     _solver->reset(_time);
 
+    // activate ros wrapper
+    _ros_wrapper->activate(true);
+
     cout << "[INFO]: Cartesian impedance control is starting!" << endl;
 }
 
 void ControllerManager::run()
 {
+    //
+    _ros_wrapper->receive();
 
     _robot->sense();
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);    
@@ -88,14 +96,17 @@ void ControllerManager::run()
     _model->update();
 
     // keep updated the position reference
-    //_model->getMotorPosition(_motor_position);
-    //_robot->setPositionReference(_motor_position);
+    _model->getMotorPosition(_motor_position);
+    _robot->setPositionReference(_motor_position);
 
     // Keep disabled joint impedance controller
     _robot->setStiffness(_stiff_tmp_state);
     _robot->setDamping(_damp_tmp_state);
 
     _robot->move();
+
+    //
+    _ros_wrapper->send();
 
     // Update the time for the solver
     _time += _dt;
@@ -104,14 +115,27 @@ void ControllerManager::run()
 
 void ControllerManager::on_stop()
 {
+    //
+    _ros_wrapper->activate(false);
 
     // Reset the joint stiffness and damping to initial values in order to enable joint impedance controller
     _robot->setStiffness(_stiff_initial_state);
     _robot->setDamping(_damp_initial_state);
 
+    _model->getRobotState("home", _qhome);
+    _robot->setPositionReference(_qhome);
+    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+    _model->update();
+
     _robot->move();
 
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
+}
+
+void ControllerManager::on_close()
+{
+    //
+    _ros_wrapper->close();
 }
 
 // ==============================================================================
