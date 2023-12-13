@@ -21,7 +21,7 @@ catkin_package(
 )
 
 include_directories(
-  include/${PROJECT_NAME}
+  include/package_first
   ${cartesian_interface_INCLUDE_DIRS}
   ${xbot2_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
@@ -64,13 +64,12 @@ add_executable(vel_control_node src/learning_src/velocity_controller_node.cpp)
 target_link_libraries(vel_control_node ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${xbot2_LIBRARIES})
 
 ## Sixth project - COM position and projection
-#add_executable(stability_node src/stability_node.cpp)
+#add_executable(stability_node src/learning_src/stability_node.cpp)
 #target_link_libraries(stability_node
 #                        ${catkin_LIBRARIES}
 #                        ${cartesian_interface_LIBRARIES}
 #                        ${xbot2_LIBRARIES}
-#                        ${PROJECT_NAME}
-#                        awesome_utils::awesome_utils)
+#                        include/package_first)#                        awesome_utils::awesome_utils)
 
 ## Seventh project - raise one leg of the robot
 #add_executable(raise_one_leg_node src/raise_one_leg.cpp)

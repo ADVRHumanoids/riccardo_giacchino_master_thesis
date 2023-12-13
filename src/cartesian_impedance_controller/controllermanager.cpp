@@ -40,10 +40,18 @@ bool ControllerManager::on_initialize()
     setDefaultControlMode(_ctrl_map);
 
     // Initialize usefull variable
-    _torque = Eigen::VectorXd::Zero(_model->getJointNum());
+    _torque_cartesian = _torque_contact = _torque = Eigen::VectorXd::Zero(_model->getJointNum());
 
     //
     _ros_wrapper = std::make_unique<CartesioRosWrapper>(_solver, "ci", "cartesian");
+
+    // Initialize the gravity compensation term
+    _gravity_torque = Eigen::VectorXd::Zero(_model->getJointNum());
+    _g = Eigen::Vector3d::Zero();
+    _J_c.resize(4, Eigen::MatrixXd::Identity(6, _model->getJointNum()));
+    _J_cz = Eigen::MatrixXd::Identity(3, 4);
+    _J_cz_pseudo_inverse = Eigen::MatrixXd::Identity(4, 3);
+    _J_leg.resize(4, Eigen::MatrixXd::Identity(6, _model->getJointNum()));
 
     return true;
 
@@ -88,7 +96,9 @@ void ControllerManager::run()
     _solver->update(_time, _dt);
 
     // Get the torque from the model
-    _model->getJointEffort(_torque);
+    _model->getJointEffort(_torque_cartesian);
+
+    compute_gravity_compensation();
 
     // Set them in the robot
     _robot->setEffortReference(_torque.tail(_robot->getJointNum()));
@@ -123,7 +133,7 @@ void ControllerManager::on_stop()
     _robot->setDamping(_damp_initial_state);
 
     _model->getRobotState("home", _qhome);
-    _robot->setPositionReference(_qhome);
+    //_robot->setPositionReference(_qhome.tail(40));
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
     _model->update();
 
@@ -190,6 +200,48 @@ void ControllerManager::joint_map_generator(){
         }
 
     }
+
+}
+
+void ControllerManager::compute_gravity_compensation(){
+
+    _model->computeGravityCompensation(_gravity_torque);
+
+    _g = _gravity_torque.segment<3>(2);
+
+    // Computation of the contact force
+
+    for (int i = 0; i < _tasks_casted.size(); i++) {
+
+        string end_link = _tasks_casted[i]->getDistalLink();
+
+        _model->getJacobian(end_link, _J_c[i]); // _J_c[i] is a 6 x 46 matrix
+
+        _J_cz.col(i) = _J_c[i].transpose().block(2, 2, 1, 3);
+
+    }
+
+    _J_cz_pseudo_inverse = _J_cz.completeOrthogonalDecomposition().pseudoInverse();   // pseudo inverse computation
+
+    _contact_force_z = -(_J_cz_pseudo_inverse * _g);   // F_contact
+
+    // τ = -τ_cartesian -τ_contact + g_a
+
+    for (int i = 0; i < _tasks_casted.size(); i++){
+
+        wrench = Eigen::Vector6d::Zero(6);
+
+        wrench[2] = _contact_force_z[i];
+
+        _model->getRelativeJacobian(_tasks_casted[i]->getDistalLink(),
+                                    _tasks_casted[i]->getBaseLink(),
+                                    _J_leg[i]);
+
+        _torque_contact = _J_leg[i].transpose() * wrench;
+
+    }
+
+    _torque = _torque_cartesian + _torque_contact + _gravity_torque;
 
 }
 

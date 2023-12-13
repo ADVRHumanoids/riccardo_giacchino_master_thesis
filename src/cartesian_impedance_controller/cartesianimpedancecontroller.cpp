@@ -54,6 +54,15 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 
     //Print of configuration parameters
     print_config_param();
+
+    // Debug
+    logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat");
+
+    // Gravity compensation
+    _gravity = Eigen::VectorXd::Zero(_model->getJointNum());
+    _Jacobian = Eigen::MatrixXd::Identity(6,46);
+    _J_floating_base = Eigen::Matrix6d::Identity();
+    _gravity_floating_base = Eigen::Vector6d::Zero();
 }
 
 // ==============================================================================
@@ -304,5 +313,9 @@ void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
 
 void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_factor){
     _D_zeta = damping_factor;
+
+}
+
+void CartesianImpedanceController::reset_logger(){
 
 }

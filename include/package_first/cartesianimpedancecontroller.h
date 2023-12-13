@@ -87,7 +87,7 @@ public:
      * @brief reset_logger will reset the logger used to create the .mat file able to plot variable in Matlab
      * It is mandatory to reset the logger, otherwise the file will not contain the data
      */
-    //void reset_logger();
+    void reset_logger();
 
 private:
 
@@ -155,7 +155,13 @@ private:
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix6d> _eigen_solver;
     Eigen::JacobiSVD<Eigen::Matrix6d> _svd;
 
-    //XBot::MatLogger2::Ptr logger;
+    XBot::MatLogger2::Ptr logger;
+
+    //Gravity compensarion
+    Eigen::VectorXd _gravity;
+    Eigen::MatrixXd _Jacobian;
+    Eigen::Vector6d _gravity_floating_base;
+    Eigen::Matrix6d _J_floating_base;
 
     // ==============================================================================
     // Additional Private Functions

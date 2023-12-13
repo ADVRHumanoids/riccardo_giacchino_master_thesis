@@ -62,6 +62,9 @@ private:
 
     double _dt, _time;
 
+    Eigen::VectorXd _torque_cartesian;
+    Eigen::VectorXd _torque_contact;
+    Eigen::Vector6d wrench;
     Eigen::VectorXd _torque;
 
     Eigen::VectorXd _qhome;
@@ -70,6 +73,15 @@ private:
     std::vector<std::shared_ptr<InteractionTask>> _tasks_casted;
 
     std::unique_ptr<CartesioRosWrapper> _ros_wrapper;
+
+    //Gravity compensation variables
+    Eigen::VectorXd _gravity_torque;
+    Eigen::Vector3d _g;
+    vector<Eigen::MatrixXd> _J_c;
+    Eigen::MatrixXd _J_cz, _J_cz_pseudo_inverse;
+    Eigen::VectorXd _contact_force_z; // 4 x 1
+
+    vector<Eigen::MatrixXd> _J_leg;
 
     // ==============================================================================
     // Additional Private Functions
@@ -94,6 +106,8 @@ private:
      *
      */
     void joint_map_generator();
+
+    void compute_gravity_compensation();
 
 };
 
