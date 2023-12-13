@@ -225,7 +225,9 @@ void ControllerManager::compute_gravity_compensation(){
 
     _contact_force_z = -(_J_cz_pseudo_inverse * _g);   // F_contact
 
+
     // τ = -τ_cartesian -τ_contact + g_a
+    _torque_contact = Eigen::VectorXd::Zero(_model->getJointNum());
 
     for (int i = 0; i < _tasks_casted.size(); i++){
 
@@ -237,7 +239,7 @@ void ControllerManager::compute_gravity_compensation(){
                                     _tasks_casted[i]->getBaseLink(),
                                     _J_leg[i]);
 
-        _torque_contact = _J_leg[i].transpose() * wrench;
+        _torque_contact += _J_leg[i].transpose() * wrench;
 
     }
 
