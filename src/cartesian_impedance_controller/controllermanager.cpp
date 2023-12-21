@@ -227,6 +227,7 @@ void ControllerManager::compute_gravity_compensation(){
 
 
     // τ = -τ_cartesian -τ_contact + g_a
+
     _torque_contact = Eigen::VectorXd::Zero(_model->getJointNum());
 
     for (int i = 0; i < _tasks_casted.size(); i++){

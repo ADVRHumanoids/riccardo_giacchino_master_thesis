@@ -23,7 +23,7 @@
 #include <emafilter.h>
 #include <lowpassfilter.h>
 #include <fstream>
-#include <awesome_utils/awesome_utils/sign_proc_utils.hpp>
+//#include <awesome_utils/awesome_utils/sign_proc_utils.hpp>
 #include <grahamscanconvexhull.h>
 
 // --------------------- NAMESPACE --------------------- //
@@ -250,10 +250,10 @@ int main (int argc, char **argv){
     auto pub_com = n.advertise<geometry_msgs::PointStamped>("/com_point", 1);
     auto pub_poly = n.advertise<geometry_msgs::PolygonStamped>("/supp_poly", 1);
     auto pub_com_prj = n.advertise<geometry_msgs::PointStamped>("/com_prj_point", 1);
-    auto pub_zmp = n.advertise<geometry_msgs::PointStamped>("/zmp_point", 1);
-    auto pub_acc_com = n.advertise<geometry_msgs::PointStamped>("/com_acc", 1);
-    auto pub_vel = n.advertise<geometry_msgs::PointStamped>("/com_vel", 1);
-    auto pub_vel_filtered = n.advertise<geometry_msgs::PointStamped>("/com_vel_filtered", 1);
+//    auto pub_zmp = n.advertise<geometry_msgs::PointStamped>("/zmp_point", 1);
+//    auto pub_acc_com = n.advertise<geometry_msgs::PointStamped>("/com_acc", 1);
+//    auto pub_vel = n.advertise<geometry_msgs::PointStamped>("/com_vel", 1);
+//    auto pub_vel_filtered = n.advertise<geometry_msgs::PointStamped>("/com_vel_filtered", 1);
 
     VectorXd joint_position;
     VectorXd joint_velocity;
@@ -266,8 +266,8 @@ int main (int argc, char **argv){
 
     Vector3d initial_velocity, final_velocity = Vector3d::Zero();
 
-    SignProcUtils::MovAvrgFilt filter_vel(3, dt, 2.0);
-    SignProcUtils::MovAvrgFilt filter_acc(3, dt, 2.0);
+//    SignProcUtils::MovAvrgFilt filter_vel(3, dt, 2.0);
+//    SignProcUtils::MovAvrgFilt filter_acc(3, dt, 2.0);
 
     while(true){
 
@@ -319,30 +319,30 @@ int main (int argc, char **argv){
 
         Vector3d com_acc, com_vel, com_vel_filtered, com_acc_filtered;
 
-        // COM velocity
-        model->getCOMVelocity(com_vel); // raw values
-        pub_vel.publish(COM_msg_generator(com_vel));    // for debugging purpose
+//        // COM velocity
+//        model->getCOMVelocity(com_vel); // raw values
+//        pub_vel.publish(COM_msg_generator(com_vel));    // for debugging purpose
 
-        VectorXd vect = com_vel.head(3); // casting the data in a VectorXd object needed for the filter function
-        filter_vel.add_sample(vect);
-        filter_vel.get(vect);  // filtering velocity of the CoM
-        com_vel_filtered = vect.head(3);
-        pub_vel_filtered.publish(COM_msg_generator(com_vel_filtered));
+//        VectorXd vect = com_vel.head(3); // casting the data in a VectorXd object needed for the filter function
+//        filter_vel.add_sample(vect);
+//        filter_vel.get(vect);  // filtering velocity of the CoM
+//        com_vel_filtered = vect.head(3);
+//        pub_vel_filtered.publish(COM_msg_generator(com_vel_filtered));
 
-        // COM Acceleration from velocity (numerical differentiation)
-        final_velocity = com_vel_filtered;
-        com_acc = (final_velocity - initial_velocity)/dt;   // compute the acceleration as a = dv/dt
+//        // COM Acceleration from velocity (numerical differentiation)
+//        final_velocity = com_vel_filtered;
+//        com_acc = (final_velocity - initial_velocity)/dt;   // compute the acceleration as a = dv/dt
 
-        VectorXd temp = com_acc.head(3);
-        filter_acc.add_sample(temp);
-        filter_acc.get(temp);   // filtering acceleration of the CoM
-        com_acc_filtered = temp.head(3);
-        pub_acc_com.publish(COM_msg_generator_acc(com_acc_filtered));
-        initial_velocity = final_velocity;  // update the velocity for the next sample
+//        VectorXd temp = com_acc.head(3);
+//        filter_acc.add_sample(temp);
+//        filter_acc.get(temp);   // filtering acceleration of the CoM
+//        com_acc_filtered = temp.head(3);
+//        pub_acc_com.publish(COM_msg_generator_acc(com_acc_filtered));
+//        initial_velocity = final_velocity;  // update the velocity for the next sample
 
-        //ZMP or CoP
-        Vector3d zmp = com_prj - ((abs(com_prj.z()))/(9.81))*com_acc;   // ZMP computation using basic formula related to the CoM acceleration
-        pub_zmp.publish(COM_msg_generator(zmp));
+//        //ZMP or CoP
+//        Vector3d zmp = com_prj - ((abs(com_prj.z()))/(9.81))*com_acc;   // ZMP computation using basic formula related to the CoM acceleration
+//        pub_zmp.publish(COM_msg_generator(zmp));
 
         // Chronos
         auto current_time = std::chrono::high_resolution_clock::now();  //cycle ending time
