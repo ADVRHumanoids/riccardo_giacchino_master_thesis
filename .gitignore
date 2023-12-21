@@ -2,4 +2,6 @@ centauro_srdf/
 centauro_urdf/
 .vscode/
 src/awesome_utils/
-CMakeList.txt.user
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
