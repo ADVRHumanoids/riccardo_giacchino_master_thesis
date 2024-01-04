@@ -41,6 +41,8 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
     _effort = Eigen::VectorXd::Zero(_model->getJointNum());
     _Tref = Eigen::Affine3d::Identity();
 
+    _stab = std::make_unique<StabilityCompensation>(_model);
+
 }
 
 // ==============================================================================
@@ -65,6 +67,8 @@ bool CartesianImpedanceSolver::update(double time, double period){
     }
 
     _model->setJointEffort(_effort);
+
+    _stab->update(time, period);
 
     return true;
 }

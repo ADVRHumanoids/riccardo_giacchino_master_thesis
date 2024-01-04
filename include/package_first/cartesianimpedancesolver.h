@@ -6,6 +6,7 @@
 // ==============================================================================
 
 #include <cartesianimpedancecontroller.h>
+#include <stability_compensation.h>
 #include <iostream>
 #include <thread>
 #include <math.h>
@@ -90,7 +91,8 @@ private:
 
     Eigen::Affine3d _Tref;  // to set the pose reference
 
-
+    //StabilityCompensation _stab;
+    std::unique_ptr<StabilityCompensation> _stab;
 };
 
 #endif // CARTESIANIMPEDANCESOLVER_H

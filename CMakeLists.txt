@@ -24,12 +24,15 @@ include_directories(
 add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
 target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES})
 
-install(TARGETS imp_controller
+add_library(stab_implementation SHARED src/cartesian_impedance_controller/stability_compensation.cpp)
+target_link_libraries(stab_implementation ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES})
+
+install(TARGETS imp_controller stab_implementation
     DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
 add_library(CartesianInterfaceSolverImpSolver SHARED src/cartesian_impedance_controller/cartesianimpedancesolver.cpp
     src/cartesian_impedance_controller/cartesio_ros_wrapper.h)
-target_link_libraries(CartesianInterfaceSolverImpSolver imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${XBotInterface_LIBRARIES})
+target_link_libraries(CartesianInterfaceSolverImpSolver imp_controller stab_implementation ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} ${XBotInterface_LIBRARIES})
 
 install(TARGETS CartesianInterfaceSolverImpSolver
     DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
@@ -44,6 +47,7 @@ if(${xbot2_FOUND})
     target_link_libraries(controllermanager
         PRIVATE
         imp_controller
+        stab_implementation
         xbot2::xbot2_ros_support)
 
     install(TARGETS controllermanager

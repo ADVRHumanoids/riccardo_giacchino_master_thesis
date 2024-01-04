@@ -7,6 +7,7 @@
 
 #include <cartesianimpedancecontroller.h>
 #include <cartesianimpedancesolver.h>
+#include <stability_compensation.h>
 #include <urdf_model/model.h>
 
 #include "../../src/cartesian_impedance_controller/cartesio_ros_wrapper.h"
