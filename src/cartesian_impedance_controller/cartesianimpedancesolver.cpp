@@ -41,7 +41,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
     _effort = Eigen::VectorXd::Zero(_model->getJointNum());
     _Tref = Eigen::Affine3d::Identity();
 
-    _stab = std::make_unique<StabilityCompensation>(_model);
+    _stab = std::make_unique<StabilityCompensation>(_model, _tasks_casted);
 
 }
 

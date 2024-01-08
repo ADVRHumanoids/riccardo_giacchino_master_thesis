@@ -20,19 +20,25 @@ class StabilityCompensation
 
 public:
 
-    StabilityCompensation(ModelInterface::Ptr model);
+    StabilityCompensation(ModelInterface::Ptr model,
+                          std::vector<std::shared_ptr<Cartesian::InteractionTask>>& tasks);
 
     void update(double time, double period);
 
 private:
 
     ModelInterface::Ptr _model;
+    std::vector<std::shared_ptr<Cartesian::InteractionTask>> _tasks;
 
     Eigen::Vector3d _IMU_angular_velocity;
 
-    double _angle;
+    vector<Eigen::Affine3d> starting_position;
 
-    Eigen::Vector3d _RPY_angle;
+    Eigen::Affine3d pose, tmp;
+
+    double h;
+    double _angle;
+    double _roll, _pitch;
 
     Eigen::Matrix3d _rotation_matrix;
 
@@ -47,6 +53,8 @@ private:
     void compute_rotation_matrix();
 
     void compute_RPY_angle();
+
+    void brain();
 
 };
 

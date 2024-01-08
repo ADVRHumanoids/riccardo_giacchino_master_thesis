@@ -1,11 +1,12 @@
 #include "stability_compensation.h"
 
-StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model):
-    _model(model)
+StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
+                                             std::vector<std::shared_ptr<Cartesian::InteractionTask>>& tasks):
+    _model(model),
+    _tasks(tasks)
 {
 
     _IMU_angular_velocity = Eigen::Vector3d::Zero();
-    _RPY_angle = Eigen::Vector3d::Zero();
     _rotation_matrix = Eigen::Matrix3d::Identity();
 
     _imu = _model->getImu("pelvis");
@@ -13,6 +14,19 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model):
     if (_imu == nullptr){
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
+
+    starting_position = vector<Eigen::Affine3d>(4, Eigen::Affine3d::Identity());
+
+    //Setting the starting position for all the legs
+    for (int i = 0; i < _tasks.size(); i++){
+
+        _tasks[i]->getPoseReference(starting_position[i]);
+    }
+
+    _model->getPose("contact_1", "contact_2", pose);
+    h = pose.translation().y();
+
+    tmp = Eigen::Affine3d::Identity();
 
 }
 
@@ -47,6 +61,10 @@ void StabilityCompensation::update(double time, double period){
 
     _rotation_matrix = _rotation_matrix * (Eigen::Matrix3d::Identity() + (sin(_angle)) * _skew_symmetric_matrix/_IMU_angular_velocity.norm() + (1 - cos(_angle))/pow(_IMU_angular_velocity.norm(),2) * _skew_symmetric_matrix * _skew_symmetric_matrix);
 
+    compute_RPY_angle();
+
+    brain();
+
     // Debug print
     //cout << "Rotation matrix from IMU\n" << _rotation_matrix << endl;
     //cout << "Period:\n" << period << endl;
@@ -55,6 +73,42 @@ void StabilityCompensation::update(double time, double period){
     //double roll = atan2(_rotation_matrix(2, 1), _rotation_matrix(2, 2));
     //double roll_deg = roll * 180.0 / M_PI;
     //std::cout << "Roll: " << roll << " radians / " << roll_deg << " degrees" << std::endl;
+}
+
+void StabilityCompensation::compute_RPY_angle(){
+
+    _roll = atan2(_rotation_matrix(2, 1), _rotation_matrix(2, 2));
+    _pitch = std::atan2(-_rotation_matrix(2, 0), std::sqrt(_rotation_matrix(2, 1) * _rotation_matrix(2, 1) + _rotation_matrix(2, 2) * _rotation_matrix(2, 2)));
 
 }
+
+void StabilityCompensation::brain(){
+
+    if(_roll < -0.05){
+
+        //only the right legs have to be raised of about
+        _model->getPose("contact_2", "base_link", tmp);
+        tmp.translation().z() += abs(h*sin(_roll));
+        _tasks[1]->setPoseReference(tmp);
+
+        _model->getPose("contact_4", "base_link", tmp);
+        tmp.translation().z() += abs(h*sin(_roll));
+        _tasks[3]->setPoseReference(tmp);
+    }
+
+    if (_roll > 0.05){
+
+        _model->getPose("contact_2", "base_link", tmp);
+        tmp.translation().z() += -abs(h*sin(_roll));
+        _tasks[1]->setPoseReference(tmp);
+
+        _model->getPose("contact_4", "base_link", tmp);
+        tmp.translation().z() += -abs(h*sin(_roll));
+        _tasks[3]->setPoseReference(tmp);
+    }
+
+}
+
+
+
 
