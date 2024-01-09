@@ -34,7 +34,10 @@ private:
 
     vector<Eigen::Affine3d> starting_position;
 
-    Eigen::Affine3d pose, tmp;
+    Eigen::Affine3d pose1, pose2;
+    Eigen::Vector3d position1, position2;
+
+    Eigen::Matrix3d _orientation;
 
     double h;
     double _angle;

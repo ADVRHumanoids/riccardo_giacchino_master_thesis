@@ -15,18 +15,7 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
 
-    starting_position = vector<Eigen::Affine3d>(4, Eigen::Affine3d::Identity());
-
-    //Setting the starting position for all the legs
-    for (int i = 0; i < _tasks.size(); i++){
-
-        _tasks[i]->getPoseReference(starting_position[i]);
-    }
-
-    _model->getPose("contact_1", "contact_2", pose);
-    h = pose.translation().y();
-
-    tmp = Eigen::Affine3d::Identity();
+    _orientation = Eigen::Matrix3d::Identity();
 
 }
 
@@ -50,20 +39,16 @@ void StabilityCompensation::asSkewSymmetric(Eigen::Vector3d vector){
 
 void StabilityCompensation::update(double time, double period){
 
-    get_IMU_velocity();
+    // get_IMU_velocity();
 
-    _angle = _IMU_angular_velocity.norm() * period;
+    // _angle = _IMU_angular_velocity.norm() * period;
 
-    // Debug print
-    //cout << "Angle:\n" << _angle << endl;
+    // // Debug print
+    // //cout << "Angle:\n" << _angle << endl;
 
-    asSkewSymmetric(_IMU_angular_velocity);
+    // asSkewSymmetric(_IMU_angular_velocity);
 
-    _rotation_matrix = _rotation_matrix * (Eigen::Matrix3d::Identity() + (sin(_angle)) * _skew_symmetric_matrix/_IMU_angular_velocity.norm() + (1 - cos(_angle))/pow(_IMU_angular_velocity.norm(),2) * _skew_symmetric_matrix * _skew_symmetric_matrix);
-
-    compute_RPY_angle();
-
-    brain();
+    // _rotation_matrix = _rotation_matrix * (Eigen::Matrix3d::Identity() + (sin(_angle)) * _skew_symmetric_matrix/_IMU_angular_velocity.norm() + (1 - cos(_angle))/pow(_IMU_angular_velocity.norm(),2) * _skew_symmetric_matrix * _skew_symmetric_matrix);
 
     // Debug print
     //cout << "Rotation matrix from IMU\n" << _rotation_matrix << endl;
@@ -73,41 +58,21 @@ void StabilityCompensation::update(double time, double period){
     //double roll = atan2(_rotation_matrix(2, 1), _rotation_matrix(2, 2));
     //double roll_deg = roll * 180.0 / M_PI;
     //std::cout << "Roll: " << roll << " radians / " << roll_deg << " degrees" << std::endl;
-}
 
-void StabilityCompensation::compute_RPY_angle(){
+    _imu->getOrientation(_orientation);
 
-    _roll = atan2(_rotation_matrix(2, 1), _rotation_matrix(2, 2));
-    _pitch = std::atan2(-_rotation_matrix(2, 0), std::sqrt(_rotation_matrix(2, 1) * _rotation_matrix(2, 1) + _rotation_matrix(2, 2) * _rotation_matrix(2, 2)));
+    _model->getPose("contact_1", "base_link", pose1);
+    _model->getPose("contact_2", "base_link", pose2);
 
-}
+    position1 = _orientation * pose1.translation();
+    position2 = _orientation * pose2.translation();
 
-void StabilityCompensation::brain(){
+    cout << position1.z() - position2.z() << endl;
 
-    if(_roll < -0.05){
 
-        //only the right legs have to be raised of about
-        _model->getPose("contact_2", "base_link", tmp);
-        tmp.translation().z() += abs(h*sin(_roll));
-        _tasks[1]->setPoseReference(tmp);
-
-        _model->getPose("contact_4", "base_link", tmp);
-        tmp.translation().z() += abs(h*sin(_roll));
-        _tasks[3]->setPoseReference(tmp);
-    }
-
-    if (_roll > 0.05){
-
-        _model->getPose("contact_2", "base_link", tmp);
-        tmp.translation().z() += -abs(h*sin(_roll));
-        _tasks[1]->setPoseReference(tmp);
-
-        _model->getPose("contact_4", "base_link", tmp);
-        tmp.translation().z() += -abs(h*sin(_roll));
-        _tasks[3]->setPoseReference(tmp);
-    }
 
 }
+
 
 
 
