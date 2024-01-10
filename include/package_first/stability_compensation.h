@@ -21,43 +21,46 @@ class StabilityCompensation
 public:
 
     StabilityCompensation(ModelInterface::Ptr model,
-                          std::vector<std::shared_ptr<Cartesian::InteractionTask>>& tasks);
+                          std::shared_ptr<Cartesian::InteractionTask> task,
+                          string relative_leg,
+                          double K_v,
+                          double K_p);
 
     void update(double time, double period);
 
 private:
 
     ModelInterface::Ptr _model;
-    std::vector<std::shared_ptr<Cartesian::InteractionTask>> _tasks;
 
-    Eigen::Vector3d _IMU_angular_velocity;
+    std::shared_ptr<Cartesian::InteractionTask> _task;
 
-    vector<Eigen::Affine3d> starting_position;
-
-    Eigen::Affine3d pose1, pose2;
-    Eigen::Vector3d position1, position2;
-
-    Eigen::Matrix3d _orientation;
-
-    double h;
-    double _angle;
-    double _roll, _pitch;
-
-    Eigen::Matrix3d _rotation_matrix;
+    string _comparison_leg;
 
     ImuSensor::ConstPtr _imu;
 
-    Eigen::Matrix3d _skew_symmetric_matrix;
+    Eigen::Matrix3d _orientation_matrix;
+    Eigen::Affine3d _leg_pose;
+    Eigen::Affine3d _relative_leg_pose;
+    Eigen::Affine3d _tmp;
 
-    void asSkewSymmetric(Eigen::Vector3d vector);
+    double _K_v, _K_p;
 
-    void get_IMU_velocity();
+    double _roll_angle, _roll_vel;
+    double _const_dist;
 
-    void compute_rotation_matrix();
+    double _vel;
+    double _pos, _pos_ref;
 
-    void compute_RPY_angle();
+    double _acc;
 
-    void brain();
+    double _pos_err;
+
+    void compute_position_error();
+
+    void compute_velocity_error(double dt);
+
+    void control_law();
+
 
 };
 

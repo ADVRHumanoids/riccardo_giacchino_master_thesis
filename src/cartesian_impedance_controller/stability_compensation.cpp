@@ -1,13 +1,16 @@
 #include "stability_compensation.h"
 
 StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
-                                             std::vector<std::shared_ptr<Cartesian::InteractionTask>>& tasks):
+                                             std::shared_ptr<Cartesian::InteractionTask> task,
+                                             string relative_leg,
+                                             double K_v,
+                                             double K_p):
     _model(model),
-    _tasks(tasks)
+    _task(task),
+    _comparison_leg(relative_leg),
+    _K_p(K_p),
+    _K_v(K_v)
 {
-
-    _IMU_angular_velocity = Eigen::Vector3d::Zero();
-    _rotation_matrix = Eigen::Matrix3d::Identity();
 
     _imu = _model->getImu("pelvis");
 
@@ -15,61 +18,63 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
 
-    _orientation = Eigen::Matrix3d::Identity();
+    _orientation_matrix = Eigen::Matrix3d::Identity();
+    _leg_pose = _relative_leg_pose = _tmp = Eigen::Affine3d::Identity();
+
+    _acc = _pos_err = _vel = _pos = 0;
+    _roll_angle = 0;
 
 }
 
-void StabilityCompensation::get_IMU_velocity(){
+void StabilityCompensation::compute_position_error(){
 
-    _imu->getAngularVelocity(_IMU_angular_velocity);
+    _imu->getOrientation(_orientation_matrix);
+
+    _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
+
     // Debug print
-    //cout << "Angular velocity:\n" << _IMU_angular_velocity.x() << endl;
+    cout << "Roll angle: " << _roll_angle << endl;
 
 }
 
-void StabilityCompensation::asSkewSymmetric(Eigen::Vector3d vector){
+void StabilityCompensation::control_law(){
 
-    _skew_symmetric_matrix <<  0, -vector(2), vector(1),
-                               vector(2), 0, -vector(0),
-                               -vector(1), vector(0), 0;
+    _roll_vel = - _K_p * (_roll_angle);
 
-    //cout << "skew_matrix:\n" << _skew_symmetric_matrix << endl;
+    // Debug print
+    cout << "αdot: " << _roll_vel << endl;
+}
+
+void StabilityCompensation::compute_velocity_error(double dt){
+
+    _model->getPose(_task->getDistalLink(), _comparison_leg, _tmp);
+    _const_dist = _tmp.translation().z();
+    _tmp = Eigen::Affine3d::Identity();
+
+    _vel = abs(_const_dist) * cos(_roll_angle) * _roll_vel;
+
+    _pos += dt * _vel;
+
+    // Debug print
+    cout << "Pos: " << _pos << endl;
 
 }
+
 
 void StabilityCompensation::update(double time, double period){
 
-    // get_IMU_velocity();
+    compute_position_error();
+    control_law();
+    compute_velocity_error(period);
 
-    // _angle = _IMU_angular_velocity.norm() * period;
+    _task->getPoseReference(_tmp);
+    _tmp.translation().z() += _pos;
+    _task->setPoseReference(_tmp);
 
-    // // Debug print
-    // //cout << "Angle:\n" << _angle << endl;
+    // FIXME: understand the strategy to select which leg has to be raised when the robot is tilting. The possible strategy are to move just a side of the robot or divide the motion
+    //        into half on one side and half on the other side in a oppsite sign of the motion.
 
-    // asSkewSymmetric(_IMU_angular_velocity);
-
-    // _rotation_matrix = _rotation_matrix * (Eigen::Matrix3d::Identity() + (sin(_angle)) * _skew_symmetric_matrix/_IMU_angular_velocity.norm() + (1 - cos(_angle))/pow(_IMU_angular_velocity.norm(),2) * _skew_symmetric_matrix * _skew_symmetric_matrix);
-
-    // Debug print
-    //cout << "Rotation matrix from IMU\n" << _rotation_matrix << endl;
-    //cout << "Period:\n" << period << endl;
-
-    // Convertion to Roll angle in rad and degree
-    //double roll = atan2(_rotation_matrix(2, 1), _rotation_matrix(2, 2));
-    //double roll_deg = roll * 180.0 / M_PI;
-    //std::cout << "Roll: " << roll << " radians / " << roll_deg << " degrees" << std::endl;
-
-    _imu->getOrientation(_orientation);
-
-    _model->getPose("contact_1", "base_link", pose1);
-    _model->getPose("contact_2", "base_link", pose2);
-
-    position1 = _orientation * pose1.translation();
-    position2 = _orientation * pose2.translation();
-
-    cout << position1.z() - position2.z() << endl;
-
-
+    // FIXME: check the correctness of the _pos sign with respect to the sign of the roll angle computed by the IMU sensor
 
 }
 

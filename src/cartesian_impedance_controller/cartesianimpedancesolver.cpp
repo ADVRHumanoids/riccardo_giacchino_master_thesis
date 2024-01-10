@@ -23,25 +23,33 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
 
     }
 
-    // Create controller for each InteractionTask
+    vector<string> vet = {"contact_2", "contact_1", "contact_4", "contact_3"};
+    int i = 0;
+
+    // Create all controller for each InteractionTask
     for (auto& task_casted : _tasks_casted){
 
         Impedance imp = task_casted->getImpedance();
 
-        _controller[task_casted] = std::make_unique<CartesianImpedanceController>(_model,  // always updated
+        _impedance_controller[task_casted] = std::make_unique<CartesianImpedanceController>(_model,  // always updated
                                                                                   imp.stiffness,
                                                                                   imp.damping,
                                                                                   task_casted->getDistalLink(),
                                                                                   task_casted->getBaseLink(),
                                                                                   task_casted->getName());
 
+        _stability_controller[task_casted] = std::make_unique<StabilityCompensation>(_model,
+                                                                                     task_casted,
+                                                                                     vet[i],
+                                                                                     10.0, 10.0);
+
+        i++;
+
     }
 
     // Variable Initialization
     _effort = Eigen::VectorXd::Zero(_model->getJointNum());
     _Tref = Eigen::Affine3d::Identity();
-
-    _stab = std::make_unique<StabilityCompensation>(_model, _tasks_casted);
 
 }
 
@@ -53,22 +61,22 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     _effort = Eigen::VectorXd::Zero(_model->getJointNum()); // reset to zero the effort
 
-    for (auto& pair : _controller){
+    for (auto& pair : _impedance_controller){
 
         pair.first->getImpedance();
         pair.first->getPoseReference(_Tref);
 
-        _controller[pair.first]->set_stiffness(pair.first->getImpedance().stiffness);
-        _controller[pair.first]->set_damping_factor(pair.first->getImpedance().damping);
-        _controller[pair.first]->set_reference_value(_Tref);
+        _impedance_controller[pair.first]->set_stiffness(pair.first->getImpedance().stiffness);
+        _impedance_controller[pair.first]->set_damping_factor(pair.first->getImpedance().damping);
+        _impedance_controller[pair.first]->set_reference_value(_Tref);
 
-        _effort += _controller[pair.first]->compute_torque();
+        _effort += _impedance_controller[pair.first]->compute_torque();
+
+        _stability_controller[pair.first]->update(time, period);
 
     }
 
     _model->setJointEffort(_effort);
-
-    _stab->update(time, period);
 
     return true;
 }

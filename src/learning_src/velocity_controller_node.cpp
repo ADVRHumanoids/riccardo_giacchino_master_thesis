@@ -67,7 +67,8 @@ int main (int argc, char **argv){
 
     auto pub_vel = nh.advertise<xbot_msgs::JointCommand>("/xbotcore/command", 1);
 
-    float vel, ang_vel = 0;
+    float vel = 5;
+    float ang_vel = 0;
     float r = 0.124;    // [m]
 
     std::vector<std::basic_string<char>> names =
@@ -94,12 +95,6 @@ int main (int argc, char **argv){
     while(true){
 
         rate.sleep();
-
-        if (vel < 2)
-        {
-            vel += 0.1; // [m/s]
-            cout << vel << endl;
-        }
 
         ang_vel = vel/r;    // [rad/s]
 
