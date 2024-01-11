@@ -33,30 +33,31 @@ void StabilityCompensation::compute_position_error(){
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
 
     // Debug print
-    cout << "Roll angle: " << _roll_angle << endl;
+    // cout << "Roll angle: " << _roll_angle << endl;
 
 }
 
 void StabilityCompensation::control_law(){
 
-    _roll_vel = - _K_p * (_roll_angle);
+    _roll_vel = - 1.0 * (_roll_angle);
 
-    // Debug print
-    cout << "αdot: " << _roll_vel << endl;
+    // Debug prit
+    // cout << "αdot: " << _roll_vel << endl;
 }
 
 void StabilityCompensation::compute_velocity_error(double dt){
 
     _model->getPose(_task->getDistalLink(), _comparison_leg, _tmp);
-    _const_dist = _tmp.translation().z();
-    _tmp = Eigen::Affine3d::Identity();
-
-    _vel = abs(_const_dist) * cos(_roll_angle) * _roll_vel;
-
-    _pos += dt * _vel;
+    _const_dist = -(_tmp.translation().y());
 
     // Debug print
-    cout << "Pos: " << _pos << endl;
+    // cout << _task->getDistalLink() << ": " << _const_dist << endl;
+
+    _tmp = Eigen::Affine3d::Identity();
+
+    _vel = _const_dist * cos(_roll_angle) * _roll_vel;
+
+    _pos = dt * _vel;
 
 }
 
@@ -68,13 +69,8 @@ void StabilityCompensation::update(double time, double period){
     compute_velocity_error(period);
 
     _task->getPoseReference(_tmp);
-    _tmp.translation().z() += _pos;
+    _tmp.translation().z() += _pos/2;
     _task->setPoseReference(_tmp);
-
-    // FIXME: understand the strategy to select which leg has to be raised when the robot is tilting. The possible strategy are to move just a side of the robot or divide the motion
-    //        into half on one side and half on the other side in a oppsite sign of the motion.
-
-    // FIXME: check the correctness of the _pos sign with respect to the sign of the roll angle computed by the IMU sensor
 
 }
 
