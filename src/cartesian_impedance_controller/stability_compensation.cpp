@@ -18,7 +18,9 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
 
-    _orientation_matrix = Eigen::Matrix3d::Identity();
+    _orientation_matrix =  Eigen::Matrix3d::Identity();
+    _angular_vel = _linear_acc = Eigen::Vector3d::Zero();
+
     _leg_pose = _relative_leg_pose = _tmp = Eigen::Affine3d::Identity();
 
     _acc = _pos_err = _vel = _pos = 0;
@@ -28,7 +30,9 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
 
 void StabilityCompensation::compute_position_error(){
 
-    _imu->getOrientation(_orientation_matrix);
+    _imu->getImuData(_orientation_matrix,
+                     _linear_acc,
+                     _angular_vel);
 
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
 
@@ -39,7 +43,7 @@ void StabilityCompensation::compute_position_error(){
 
 void StabilityCompensation::control_law(){
 
-    _roll_vel = - 1.0 * (_roll_angle);
+    _roll_vel = - _K_v * (_angular_vel.x()) - _K_p * (_roll_angle);
 
     // Debug prit
     // cout << "αdot: " << _roll_vel << endl;
@@ -55,9 +59,13 @@ void StabilityCompensation::compute_velocity_error(double dt){
 
     _tmp = Eigen::Affine3d::Identity();
 
-    _vel = _const_dist * cos(_roll_angle) * _roll_vel;
+    _vel = _const_dist * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_vel);
 
-    _pos = dt * _vel;
+    // if(_task->getDistalLink() == "contact_2")
+    //     cout << "Vel: " << _vel << endl;
+
+    _pos = dt * _const_dist * cos(_roll_angle) * _roll_vel + 0.5 * pow(dt, 2) * _vel;
+
 
 }
 

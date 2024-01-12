@@ -39,6 +39,9 @@ private:
     ImuSensor::ConstPtr _imu;
 
     Eigen::Matrix3d _orientation_matrix;
+    Eigen::Vector3d _angular_vel;
+    Eigen::Vector3d _linear_acc;
+
     Eigen::Affine3d _leg_pose;
     Eigen::Affine3d _relative_leg_pose;
     Eigen::Affine3d _tmp;
