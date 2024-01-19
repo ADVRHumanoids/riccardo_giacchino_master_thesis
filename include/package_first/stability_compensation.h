@@ -15,17 +15,38 @@
 using namespace XBot;
 using namespace std;
 
+/**
+ * @brief The StabilityCompensation class provides functionality for stability compensation in a robotic system.
+ *
+ * This class is designed to compute and apply stability compensation based on IMU data like angle of the base and angular velocity.
+ */
 class StabilityCompensation
 {
 
 public:
 
+    /**
+     * @brief Constructor for StabilityCompensation.
+     *
+     * @param model A pointer to the robot model interface.
+     * @param task A shared pointer to the Cartesian interaction task (already casted into Interaction task) The following code will
+     *             change the reference position of such task
+     * @param relative_leg The name of the link to identify the leg with respect to is computed the angle (See README file for more details).
+     * @param K_v The velocity gain for the control law.
+     * @param K_p The proportional gain for the control law.
+     */
     StabilityCompensation(ModelInterface::Ptr model,
                           std::shared_ptr<Cartesian::InteractionTask> task,
                           string relative_leg,
                           double K_v,
                           double K_p);
 
+    /**
+     * @brief Update the stability compensation based on the current state of the system.
+     *
+     * @param time The current time.
+     * @param period The time period between updates.
+     */
     void update(double time, double period);
 
 private:
@@ -48,22 +69,17 @@ private:
 
     double _K_v, _K_p;
 
-    double _roll_angle, _roll_vel;
+    double _roll_angle, _roll_acc;
     double _const_dist;
 
     double _vel;
-    double _pos, _pos_ref;
-
-    double _acc;
-
-    double _pos_err;
+    double _pos;
 
     void compute_position_error();
 
     void compute_velocity_error(double dt);
 
     void control_law();
-
 
 };
 

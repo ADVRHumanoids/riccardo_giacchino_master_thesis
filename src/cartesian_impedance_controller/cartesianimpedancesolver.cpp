@@ -41,7 +41,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
         _stability_controller[task_casted] = std::make_unique<StabilityCompensation>(_model,
                                                                                      task_casted,
                                                                                      vet[i],
-                                                                                     100.0, 100.0);
+                                                                                     10.0, 10.0);
 
         i++;
 

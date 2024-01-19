@@ -53,6 +53,10 @@ bool ControllerManager::on_initialize()
     _J_cz_pseudo_inverse = Eigen::MatrixXd::Identity(4, 3);
     _J_leg.resize(4, Eigen::MatrixXd::Identity(6, _model->getJointNum()));
 
+    // ============================== DEBUG ==============================
+    _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat");
+    _imu = _model->getImu("pelvis");
+
     return true;
 
 }
@@ -118,6 +122,17 @@ void ControllerManager::run()
     //
     _ros_wrapper->send();
 
+    // ============================== DEBUG ==============================
+    _imu->getOrientation(orient);
+    _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
+    for (auto task : _tasks_casted){
+        _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
+        task->getPoseReference(pos_ref);
+        _logger->add(string("pos_real_" + task->getName()), pos_real.translation());
+        _logger->add(string("pos_ref_" + task->getName()), pos_ref.translation());
+        _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
+    }
+
     // Update the time for the solver
     _time += _dt;
 
@@ -140,6 +155,10 @@ void ControllerManager::on_stop()
     _robot->move();
 
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
+
+    // ============================== DEBUG ==============================
+    _logger.reset();
+
 }
 
 void ControllerManager::on_close()
@@ -173,6 +192,8 @@ void ControllerManager::joint_map_generator(){
 
     auto urdf_model = _model->getUrdf();
 
+    auto vec = {"ankle_yaw_1", "ankle_yaw_2", "ankle_yaw_3", "ankle_yaw_4"};
+
     for (auto task : _tasks_casted) {
 
         string end_link = task->getDistalLink();
@@ -190,9 +211,18 @@ void ControllerManager::joint_map_generator(){
                 cerr << "[WARNING]: robot does not have joint " << parent_joint->name << endl;
 
             } else {
-                _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping() + ControlMode::Position();
-                _stiff_tmp_state[parent_joint->name] = _zero;
-                _damp_tmp_state[parent_joint->name] = _zero;
+
+                if (find(vec.begin(), vec.end(), parent_joint->name) != vec.end()){
+                    _ctrl_map[parent_joint->name] = ControlMode::Idle();
+                }
+
+                else{
+
+                    _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
+                    _stiff_tmp_state[parent_joint->name] = _zero;
+                    _damp_tmp_state[parent_joint->name] = _zero;
+
+                }
             }
 
             end_link = link->getParent()->name;

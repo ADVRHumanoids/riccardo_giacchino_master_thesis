@@ -84,6 +84,14 @@ private:
 
     vector<Eigen::MatrixXd> _J_leg;
 
+
+    // ========================== DEBUG ==========================
+    XBot::MatLogger2::Ptr _logger;
+    Eigen::Affine3d pos_real, pos_ref;
+    Eigen::Matrix3d orient;
+    ImuSensor::ConstPtr _imu;
+
+
     // ==============================================================================
     // Additional Private Functions
     // ==============================================================================
