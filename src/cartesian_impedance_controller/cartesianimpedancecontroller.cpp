@@ -89,6 +89,7 @@ void CartesianImpedanceController::update_D()
 
     // Refer to documentation for the formula
     _D.noalias() = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+    // cout << string(_end_effector_link + "\n")  << _K_omega << endl << _Q.transpose() << endl;
 
     isPositiveDefinite(_D);
 

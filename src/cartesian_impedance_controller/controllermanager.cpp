@@ -54,7 +54,7 @@ bool ControllerManager::on_initialize()
     _J_leg.resize(4, Eigen::MatrixXd::Identity(6, _model->getJointNum()));
 
     // ============================== DEBUG ==============================
-    _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat");
+    _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/10000_8000_YES_stab.mat");
     _imu = _model->getImu("pelvis");
 
     return true;
@@ -123,14 +123,19 @@ void ControllerManager::run()
     _ros_wrapper->send();
 
     // ============================== DEBUG ==============================
-    _imu->getOrientation(orient);
-    _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
-    for (auto task : _tasks_casted){
-        _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
-        task->getPoseReference(pos_ref);
-        _logger->add(string("pos_real_" + task->getName()), pos_real.translation());
-        _logger->add(string("pos_ref_" + task->getName()), pos_ref.translation());
-        _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
+
+    _model->getJointVelocity(_vel);
+    if (_vel(11) >= 7 || flag == true){
+        flag = true;
+        _imu->getOrientation(orient);
+        _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
+        for (auto task : _tasks_casted){
+            _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
+            task->getPoseReference(pos_ref);
+            _logger->add(string("pos_real_" + task->getName()), pos_real.translation());
+            _logger->add(string("pos_ref_" + task->getName()), pos_ref.translation());
+            _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
+        }
     }
 
     // Update the time for the solver
