@@ -93,6 +93,8 @@ private:
     Eigen::VectorXd _effort;
 
     Eigen::Affine3d _Tref;  // to set the pose reference
+    Eigen::Vector6d _vel_ref;
+    Eigen::Vector6d _acc_ref;
 
 };
 

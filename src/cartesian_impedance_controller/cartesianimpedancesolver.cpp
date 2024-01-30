@@ -41,7 +41,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
         _stability_controller[task_casted] = std::make_unique<StabilityCompensation>(_model,
                                                                                      task_casted,
                                                                                      vet[i],
-                                                                                     10.0, 10.0);
+                                                                                     25.0);
 
         i++;
 
@@ -63,16 +63,16 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     for (auto& pair : _impedance_controller){
 
+        _stability_controller[pair.first]->update(time, period);
+
         pair.first->getImpedance();
-        pair.first->getPoseReference(_Tref);
+        pair.first->getPoseReference(_Tref, &_vel_ref, &_acc_ref);
 
         _impedance_controller[pair.first]->set_stiffness(pair.first->getImpedance().stiffness);
         _impedance_controller[pair.first]->set_damping_factor(pair.first->getImpedance().damping);
-        _impedance_controller[pair.first]->set_reference_value(_Tref);
+        _impedance_controller[pair.first]->set_reference_value(_Tref, _vel_ref, _acc_ref);
 
         _effort += _impedance_controller[pair.first]->compute_torque();
-
-        _stability_controller[pair.first]->update(time, period);
 
     }
 
