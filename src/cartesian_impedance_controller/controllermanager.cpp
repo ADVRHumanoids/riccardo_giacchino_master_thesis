@@ -53,9 +53,14 @@ bool ControllerManager::on_initialize()
     _J_cz_pseudo_inverse = Eigen::MatrixXd::Identity(4, 3);
     _J_leg.resize(4, Eigen::MatrixXd::Identity(6, _model->getJointNum()));
 
+    // FIXME: Other
+    _total_Jd_Qd = Eigen::VectorXd::Zero(46);
+
     // ============================== DEBUG ==============================
-    _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/10000_8000_YES_stab.mat");
-    _imu = _model->getImu("pelvis");
+    // XBot::MatLogger2::Options opt;
+    // opt.default_buffer_size = 1e9;
+    // _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat", opt);
+    // _imu = _model->getImu("pelvis");
 
     return true;
 
@@ -104,6 +109,8 @@ void ControllerManager::run()
 
     compute_gravity_compensation();
 
+    control_law();
+
     // Set them in the robot
     _robot->setEffortReference(_torque.tail(_robot->getJointNum()));
 
@@ -123,20 +130,16 @@ void ControllerManager::run()
     _ros_wrapper->send();
 
     // ============================== DEBUG ==============================
-
-    _model->getJointVelocity(_vel);
-    if (_vel(11) >= 7 || flag == true){
-        flag = true;
-        _imu->getOrientation(orient);
-        _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
-        for (auto task : _tasks_casted){
-            _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
-            task->getPoseReference(pos_ref);
-            _logger->add(string("pos_real_" + task->getName()), pos_real.translation());
-            _logger->add(string("pos_ref_" + task->getName()), pos_ref.translation());
-            _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
-        }
-    }
+    // _imu->getOrientation(orient);
+    // _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
+    // for (auto task : _tasks_casted){
+    //     _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
+    //     task->getPoseReference(pos_ref);
+    //     _logger->add(string("pos_real_" + task->getName()), pos_real.translation());
+    //     _logger->add(string("pos_ref_" + task->getName()), pos_ref.translation());
+    //     _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
+    // }
+    // _logger->add("time", _time);
 
     // Update the time for the solver
     _time += _dt;
@@ -148,21 +151,19 @@ void ControllerManager::on_stop()
     //
     _ros_wrapper->activate(false);
 
+    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+    _model->update();
+
     // Reset the joint stiffness and damping to initial values in order to enable joint impedance controller
     _robot->setStiffness(_stiff_initial_state);
     _robot->setDamping(_damp_initial_state);
-
-    _model->getRobotState("home", _qhome);
-    //_robot->setPositionReference(_qhome.tail(40));
-    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
-    _model->update();
 
     _robot->move();
 
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
 
     // ============================== DEBUG ==============================
-    _logger.reset();
+    //_logger.reset();
 
 }
 
@@ -238,6 +239,7 @@ void ControllerManager::joint_map_generator(){
 
 }
 
+
 void ControllerManager::compute_gravity_compensation(){
 
     _model->computeGravityCompensation(_gravity_torque);
@@ -260,8 +262,7 @@ void ControllerManager::compute_gravity_compensation(){
 
     _contact_force_z = -(_J_cz_pseudo_inverse * _g);   // F_contact
 
-
-    // τ = -τ_cartesian -τ_contact + g_a
+    // τ = -τ_cartesian -τ_contact + g
 
     _torque_contact = Eigen::VectorXd::Zero(_model->getJointNum());
 
@@ -279,7 +280,24 @@ void ControllerManager::compute_gravity_compensation(){
 
     }
 
-    _torque = _torque_cartesian + _torque_contact + _gravity_torque;
+}
+
+void ControllerManager::control_law(){
+
+    current_index = 6;
+
+    for (int i = 0; i < _tasks_casted.size(); i++){
+
+        _model->computeRelativeJdotQdot(_tasks_casted[i]->getDistalLink(), _tasks_casted[i]->getBaseLink(), _J_dot_Q_dot);
+
+        _total_Jd_Qd.segment(current_index, _J_dot_Q_dot.size()) = _J_dot_Q_dot;
+        current_index += _J_dot_Q_dot.size();
+    }
+
+    _model->computeNonlinearTerm(_non_linear_torque);
+
+    // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
+    _torque = _torque_cartesian + _gravity_torque + _torque_contact + _non_linear_torque + _total_Jd_Qd;
 
 }
 

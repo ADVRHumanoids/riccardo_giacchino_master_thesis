@@ -75,23 +75,29 @@ private:
 
     std::unique_ptr<CartesioRosWrapper> _ros_wrapper;
 
-    //Gravity compensation variables
+    // Gravity compensation variables
     Eigen::VectorXd _gravity_torque;
     Eigen::Vector3d _g;
     vector<Eigen::MatrixXd> _J_c;
     Eigen::MatrixXd _J_cz, _J_cz_pseudo_inverse;
     Eigen::VectorXd _contact_force_z; // 4 x 1
 
+    // Computing JdotQdot and the non-linear terms
+    Eigen::Vector6d _J_dot_Q_dot;
+    Eigen::VectorXd _total_Jd_Qd;
+    int current_index;
+    Eigen::VectorXd _non_linear_torque;
+
     vector<Eigen::MatrixXd> _J_leg;
 
 
     // ========================== DEBUG ==========================
-    XBot::MatLogger2::Ptr _logger;
-    Eigen::Affine3d pos_real, pos_ref;
-    Eigen::Matrix3d orient;
-    ImuSensor::ConstPtr _imu;
-    Eigen::VectorXd _vel;
-    bool flag = false;
+    // XBot::MatLogger2::Ptr _logger;
+    // Eigen::Affine3d pos_real, pos_ref;
+    // Eigen::Matrix3d orient;
+    // ImuSensor::ConstPtr _imu;
+    // Eigen::VectorXd _vel;
+    // bool flag = false;
 
 
     // ==============================================================================
@@ -119,6 +125,8 @@ private:
     void joint_map_generator();
 
     void compute_gravity_compensation();
+
+    void control_law();
 
 };
 
