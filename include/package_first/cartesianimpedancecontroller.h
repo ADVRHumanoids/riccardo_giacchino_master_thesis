@@ -69,7 +69,7 @@ public:
      * @brief Sets the reference value for the Cartesian Impedance Controller.
      * @param Tref The new reference pose in the form of a rototranslation matrix.
      */
-    void set_reference_value(Eigen::Affine3d Tref);
+    void set_reference_value(Eigen::Affine3d Tref, Eigen::Vector6d xdot_ref, Eigen::Vector6d xddot_ref);
 
     /**
      * @brief Sets the stiffness matrix for the Cartesian Impedance Controller.
@@ -99,7 +99,9 @@ private:
     Eigen::Affine3d _x_ref, _x_real;
 
     // Real velocity, position of the end-effector w.r.t. to the root link
-    Eigen::Vector6d _xdot_real;
+    Eigen::Vector6d _xdot_ref, _xdot_real;
+
+    Eigen::Vector6d _xddot_ref;
 
     // Error variables
     Eigen::Vector6d _edot, _e;

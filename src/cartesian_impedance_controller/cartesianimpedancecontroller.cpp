@@ -24,7 +24,8 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 
     // Inizialize all parameteres to zero
     _x_real = _x_ref = Eigen::Affine3d::Identity();
-    _xdot_real = Eigen::Vector6d::Zero(6);
+    _xdot_real = _xdot_ref = Eigen::Vector6d::Zero(6);
+    _xddot_ref = Eigen::Vector6d::Zero(6);
     _edot = _e = Eigen::Vector6d::Zero(6);
 
     // Initialize all matrix to identity matrix
@@ -117,7 +118,7 @@ void CartesianImpedanceController::compute_error()
     _e << _x_ref.translation() - _x_real.translation(), orientation_error();
 
     // Velocity error
-    _edot.noalias() = -_xdot_real;
+    _edot.noalias() = _xdot_ref - _xdot_real;
 
     // Debug print
     //cout << "Pos error:\n" << _e << endl;
@@ -149,7 +150,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     _force = Eigen::Vector6d::Zero(6);
     _torque = Eigen::VectorXd::Zero(46);
 
-    _force.noalias() = (_D * _edot) + (_K * _e);
+    _force.noalias() = (_op_sp_inertia * _xddot_ref) + (_D * _edot) + (_K * _e);
 
     _torque.noalias() = _J.transpose() * _force;
 
@@ -294,10 +295,11 @@ void CartesianImpedanceController::print_config_param(){
 // Setter and Getter
 // ==============================================================================
 
-void CartesianImpedanceController::set_reference_value(Eigen::Affine3d Tref)
+void CartesianImpedanceController::set_reference_value(Eigen::Affine3d Tref, Eigen::Vector6d xdot_ref, Eigen::Vector6d xddot_ref)
 {
-    //_model->getPose(_end_effector_link, _root_link, _x_ref);
     _x_ref = Tref;
+    _xdot_ref = xdot_ref;
+    _xddot_ref = xddot_ref;
 }
 
 void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
