@@ -38,7 +38,6 @@ public:
     StabilityCompensation(ModelInterface::Ptr model,
                           std::shared_ptr<Cartesian::InteractionTask> task,
                           string relative_leg,
-                          double K_v,
                           double K_p);
 
     /**
@@ -65,15 +64,18 @@ private:
 
     Eigen::Affine3d _leg_pose;
     Eigen::Affine3d _relative_leg_pose;
-    Eigen::Affine3d _tmp;
+    Eigen::Affine3d _reference_pose;
+
+    Eigen::Vector6d _reference_vel, _reference_acc;
 
     double _K_v, _K_p;
 
     double _roll_angle, _roll_acc;
     double _const_dist;
 
-    double _vel;
-    double _pos;
+    double _delta_z_ddot;
+    double _delta_z_dot;
+    double _delta_z;
 
     void compute_position_error();
 
