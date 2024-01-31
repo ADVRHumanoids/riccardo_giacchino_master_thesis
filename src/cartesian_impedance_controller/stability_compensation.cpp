@@ -2,11 +2,13 @@
 
 StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
                                              std::shared_ptr<Cartesian::InteractionTask> task,
-                                             string relative_leg,
+                                             string relative_leg_roll,
+                                             string relative_leg_pitch,
                                              double K_p):
     _model(model),
     _task(task),
-    _comparison_leg(relative_leg),
+    _comparison_leg_roll(relative_leg_roll),
+    _comparison_leg_pitch(relative_leg_pitch),
     _K_p(K_p)
 {
 
@@ -37,6 +39,7 @@ void StabilityCompensation::compute_position_error(){
                      _angular_vel);
 
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
+    _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(0, 0) * _orientation_matrix(0, 0) + _orientation_matrix(1, 0) * _orientation_matrix(1, 0)));
 
 }
 
@@ -44,18 +47,25 @@ void StabilityCompensation::control_law(){
 
     _roll_acc = - _K_v * (_angular_vel.x()) - _K_p * (_roll_angle);
 
+    _pitch_acc = - _K_v * (_angular_vel.y()) - _K_p * (_pitch_angle);
+
 }
 
 void StabilityCompensation::compute_velocity_error(double dt){
 
-    _model->getPose(_task->getDistalLink(), _comparison_leg, _reference_pose);
-    _const_dist = -(_reference_pose.translation().y());
+    _model->getPose(_task->getDistalLink(), _comparison_leg_roll, _reference_pose);
+    _const_dist_roll = -(_reference_pose.translation().y());
 
-    _reference_pose = Eigen::Affine3d::Identity();
+    _model->getPose(_task->getDistalLink(), _comparison_leg_pitch, _reference_pose_2);
+    _const_dist_pitch = (_reference_pose_2.translation().x());
 
-    _delta_z_ddot = _const_dist * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_acc);
+    _reference_pose = _reference_pose_2 = Eigen::Affine3d::Identity();
 
-    _delta_z_dot = _const_dist * cos(_roll_angle) * _roll_acc;
+    _delta_z_ddot = _const_dist_roll * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_acc) +
+                        _const_dist_pitch * (- sin(_pitch_angle) * pow(_angular_vel.y(), 2) + cos(_pitch_angle) * _pitch_acc);
+
+    _delta_z_dot = _const_dist_roll * cos(_roll_angle) * _roll_acc +
+                   _const_dist_pitch * cos(_pitch_angle) * _pitch_acc;
 
     _delta_z = (dt * _delta_z_dot) + (0.5 * pow(dt, 2) * _delta_z_ddot);
 

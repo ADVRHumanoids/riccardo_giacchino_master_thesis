@@ -24,6 +24,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
     }
 
     vector<string> vet = {"contact_2", "contact_1", "contact_4", "contact_3"};
+    vector<string> vet2 = {"contact_3", "contact_4", "contact_1", "contact_2"};
     int i = 0;
 
     // Create all controller for each InteractionTask
@@ -41,6 +42,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
         _stability_controller[task_casted] = std::make_unique<StabilityCompensation>(_model,
                                                                                      task_casted,
                                                                                      vet[i],
+                                                                                     vet2[i],
                                                                                      25.0);
 
         i++;

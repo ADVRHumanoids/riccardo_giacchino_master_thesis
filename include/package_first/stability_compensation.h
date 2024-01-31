@@ -37,7 +37,8 @@ public:
      */
     StabilityCompensation(ModelInterface::Ptr model,
                           std::shared_ptr<Cartesian::InteractionTask> task,
-                          string relative_leg,
+                          string relative_leg_roll,
+                          string relative_leg_pitch,
                           double K_p);
 
     /**
@@ -54,7 +55,7 @@ private:
 
     std::shared_ptr<Cartesian::InteractionTask> _task;
 
-    string _comparison_leg;
+    string _comparison_leg_roll, _comparison_leg_pitch;
 
     ImuSensor::ConstPtr _imu;
 
@@ -62,16 +63,16 @@ private:
     Eigen::Vector3d _angular_vel;
     Eigen::Vector3d _linear_acc;
 
-    Eigen::Affine3d _leg_pose;
-    Eigen::Affine3d _relative_leg_pose;
-    Eigen::Affine3d _reference_pose;
+    Eigen::Affine3d _leg_pose, _leg_pose_2;
+    Eigen::Affine3d _relative_leg_pose, _relative_leg_pose_2;
+    Eigen::Affine3d _reference_pose, _reference_pose_2;
 
     Eigen::Vector6d _reference_vel, _reference_acc;
 
     double _K_v, _K_p;
 
-    double _roll_angle, _roll_acc;
-    double _const_dist;
+    double _roll_angle, _roll_acc, _pitch_angle, _pitch_acc;
+    double _const_dist_roll, _const_dist_pitch;
 
     double _delta_z_ddot;
     double _delta_z_dot;
