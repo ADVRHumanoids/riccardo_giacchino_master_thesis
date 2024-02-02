@@ -61,8 +61,8 @@ void StabilityCompensation::compute_velocity_error(double dt){
 
     _reference_pose = _reference_pose_2 = Eigen::Affine3d::Identity();
 
-    _delta_z_ddot = _const_dist_roll * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_acc) +
-                        _const_dist_pitch * (- sin(_pitch_angle) * pow(_angular_vel.y(), 2) + cos(_pitch_angle) * _pitch_acc);
+    _delta_z_ddot = _const_dist_roll * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_acc * dt) +
+                    _const_dist_pitch * (- sin(_pitch_angle) * pow(_angular_vel.y(), 2) + cos(_pitch_angle) * _pitch_acc * dt);
 
     _delta_z_dot = _const_dist_roll * cos(_roll_angle) * _roll_acc +
                    _const_dist_pitch * cos(_pitch_angle) * _pitch_acc;

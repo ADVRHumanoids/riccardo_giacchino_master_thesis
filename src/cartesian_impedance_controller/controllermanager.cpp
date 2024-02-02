@@ -198,6 +198,7 @@ void ControllerManager::joint_map_generator(){
 
     auto urdf_model = _model->getUrdf();
 
+    // Vector of which joint to set in Idle control mode
     auto vec = {"ankle_yaw_1", "ankle_yaw_2", "ankle_yaw_3", "ankle_yaw_4"};
 
     for (auto task : _tasks_casted) {
@@ -218,6 +219,7 @@ void ControllerManager::joint_map_generator(){
 
             } else {
 
+                // Setting the yaw joint of each leg to Idle so that it is possible to use the omnisteering plugin
                 if (find(vec.begin(), vec.end(), parent_joint->name) != vec.end()){
                     _ctrl_map[parent_joint->name] = ControlMode::Idle();
                 }
@@ -260,15 +262,15 @@ void ControllerManager::compute_gravity_compensation(){
 
     _J_cz_pseudo_inverse = _J_cz.completeOrthogonalDecomposition().pseudoInverse();   // pseudo inverse computation
 
-    _contact_force_z = -(_J_cz_pseudo_inverse * _g);   // F_contact
+    _contact_force_z.noalias() = -(_J_cz_pseudo_inverse * _g);   // F_contact
 
     // τ = -τ_cartesian -τ_contact + g
 
-    _torque_contact = Eigen::VectorXd::Zero(_model->getJointNum());
+    _torque_contact.setZero(_model->getJointNum());
 
     for (int i = 0; i < _tasks_casted.size(); i++){
 
-        wrench = Eigen::Vector6d::Zero(6);
+        wrench.setZero();
 
         wrench[2] = _contact_force_z[i];
 
@@ -276,7 +278,7 @@ void ControllerManager::compute_gravity_compensation(){
                                     _tasks_casted[i]->getBaseLink(),
                                     _J_leg[i]);
 
-        _torque_contact += _J_leg[i].transpose() * wrench;
+        _torque_contact.noalias() += _J_leg[i].transpose() * wrench;
 
     }
 
@@ -297,7 +299,7 @@ void ControllerManager::control_law(){
     _model->computeNonlinearTerm(_non_linear_torque);
 
     // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
-    _torque = _torque_cartesian + _gravity_torque + _torque_contact + _non_linear_torque + _total_Jd_Qd;
+    _torque.noalias() = _torque_cartesian + _gravity_torque + _torque_contact + _non_linear_torque + _total_Jd_Qd;
 
 }
 
