@@ -39,7 +39,8 @@ public:
                           std::shared_ptr<Cartesian::InteractionTask> task,
                           string relative_leg_roll,
                           string relative_leg_pitch,
-                          double K_p);
+                          double K_p_roll,
+                          double K_p_pitch);
 
     /**
      * @brief Update the stability compensation based on the current state of the system.
@@ -69,7 +70,8 @@ private:
 
     Eigen::Vector6d _reference_vel, _reference_acc;
 
-    double _K_v, _K_p;
+    double _K_v_roll, _K_p_roll;
+    double _K_v_pitch, _K_p_pitch;
 
     double _roll_angle, _roll_acc, _pitch_angle, _pitch_acc;
     double _const_dist_roll, _const_dist_pitch;

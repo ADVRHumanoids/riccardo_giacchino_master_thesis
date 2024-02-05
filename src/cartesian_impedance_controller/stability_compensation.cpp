@@ -4,13 +4,17 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
                                              std::shared_ptr<Cartesian::InteractionTask> task,
                                              string relative_leg_roll,
                                              string relative_leg_pitch,
-                                             double K_p):
+                                             double K_p_roll,
+                                             double K_p_pitch):
     _model(model),
     _task(task),
     _comparison_leg_roll(relative_leg_roll),
     _comparison_leg_pitch(relative_leg_pitch),
-    _K_p(K_p)
+    _K_p_roll(K_p_roll),
+    _K_p_pitch(K_p_pitch)
 {
+
+    // TODO: Convert all these variable into a vector of two elements
 
     _imu = _model->getImu("pelvis");
 
@@ -18,7 +22,8 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
 
-    _K_v = 2 * sqrt(_K_p);
+    _K_v_roll = 2 * sqrt(_K_p_roll);
+    _K_v_pitch = 2 * sqrt(_K_p_pitch);
 
     _orientation_matrix =  Eigen::Matrix3d::Identity();
     _angular_vel = _linear_acc = Eigen::Vector3d::Zero();
@@ -45,9 +50,9 @@ void StabilityCompensation::compute_position_error(){
 
 void StabilityCompensation::control_law(){
 
-    _roll_acc = - _K_v * (_angular_vel.x()) - _K_p * (_roll_angle);
+    _roll_acc = - _K_v_roll * (_angular_vel.x()) - _K_p_roll * (_roll_angle);
 
-    _pitch_acc = - _K_v * (_angular_vel.y()) - _K_p * (_pitch_angle);
+    _pitch_acc = - _K_v_pitch * (_angular_vel.y()) - _K_p_pitch * (_pitch_angle);
 
 }
 
