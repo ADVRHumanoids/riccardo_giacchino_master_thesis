@@ -57,10 +57,10 @@ bool ControllerManager::on_initialize()
     _total_Jd_Qd = Eigen::VectorXd::Zero(46);
 
     // ============================== DEBUG ==============================
-    // XBot::MatLogger2::Options opt;
-    // opt.default_buffer_size = 1e9;
-    // _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat", opt);
-    // _imu = _model->getImu("pelvis");
+    XBot::MatLogger2::Options opt;
+    opt.default_buffer_size = 1e9;
+    _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/step_responce_roll.mat", opt);
+    _imu = _model->getImu("pelvis");
 
     return true;
 
@@ -117,7 +117,7 @@ void ControllerManager::run()
     _model->update();
 
     // keep updated the position reference
-    _model->getMotorPosition(_motor_position);
+    _robot->getMotorPosition(_motor_position);
     _robot->setPositionReference(_motor_position);
 
     // Keep disabled joint impedance controller
@@ -132,14 +132,14 @@ void ControllerManager::run()
     // ============================== DEBUG ==============================
     // _imu->getOrientation(orient);
     // _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
-    // for (auto task : _tasks_casted){
-    //     _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
-    //     task->getPoseReference(pos_ref);
-    //     _logger->add(string("pos_real_" + task->getName()), pos_real.translation());
-    //     _logger->add(string("pos_ref_" + task->getName()), pos_ref.translation());
-    //     _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
-    // }
-    // _logger->add("time", _time);
+    for (auto task : _tasks_casted){
+        _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
+        task->getPoseReference(pos_ref);
+        _logger->add(string("pos_real_" + task->getName()), pos_real.translation());
+        _logger->add(string("pos_ref_" + task->getName()), pos_ref.translation());
+        _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
+    }
+    _logger->add("time", _time);
 
     // Update the time for the solver
     _time += _dt;
@@ -163,7 +163,7 @@ void ControllerManager::on_stop()
     cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
 
     // ============================== DEBUG ==============================
-    //_logger.reset();
+    _logger.reset();
 
 }
 
@@ -226,7 +226,7 @@ void ControllerManager::joint_map_generator(){
 
                 else{
 
-                    _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping();
+                    _ctrl_map[parent_joint->name] = ControlMode::Effort() + ControlMode::Stiffness() + ControlMode::Damping() + ControlMode::Position();
                     _stiff_tmp_state[parent_joint->name] = _zero;
                     _damp_tmp_state[parent_joint->name] = _zero;
 

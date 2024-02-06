@@ -3,15 +3,11 @@
 StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
                                              std::shared_ptr<Cartesian::InteractionTask> task,
                                              string relative_leg_roll,
-                                             string relative_leg_pitch,
-                                             double K_p_roll,
-                                             double K_p_pitch):
+                                             string relative_leg_pitch):
     _model(model),
     _task(task),
     _comparison_leg_roll(relative_leg_roll),
-    _comparison_leg_pitch(relative_leg_pitch),
-    _K_p_roll(K_p_roll),
-    _K_p_pitch(K_p_pitch)
+    _comparison_leg_pitch(relative_leg_pitch)
 {
 
     // TODO: Convert all these variable into a vector of two elements
@@ -21,9 +17,6 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
     if (_imu == nullptr){
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
-
-    _K_v_roll = 2 * sqrt(_K_p_roll);
-    _K_v_pitch = 2 * sqrt(_K_p_pitch);
 
     _orientation_matrix =  Eigen::Matrix3d::Identity();
     _angular_vel = _linear_acc = Eigen::Vector3d::Zero();
@@ -95,6 +88,14 @@ void StabilityCompensation::update(double time, double period){
 
 }
 
+void StabilityCompensation::set_K_p(double cartesian_omega_z){
+
+    // _K_p_roll = _K_p_pitch = cartesian_omega_z / 100;
+    _K_p_roll = _K_p_pitch = 15;
+    _K_v_roll = 2 * sqrt(_K_p_roll);
+    _K_v_pitch = 2 * sqrt(_K_p_pitch);
+
+}
 
 
 

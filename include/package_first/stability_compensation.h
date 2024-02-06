@@ -38,9 +38,7 @@ public:
     StabilityCompensation(ModelInterface::Ptr model,
                           std::shared_ptr<Cartesian::InteractionTask> task,
                           string relative_leg_roll,
-                          string relative_leg_pitch,
-                          double K_p_roll,
-                          double K_p_pitch);
+                          string relative_leg_pitch);
 
     /**
      * @brief Update the stability compensation based on the current state of the system.
@@ -49,6 +47,8 @@ public:
      * @param period The time period between updates.
      */
     void update(double time, double period);
+
+    void set_K_p(double K_p);
 
 private:
 

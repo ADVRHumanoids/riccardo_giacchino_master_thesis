@@ -92,11 +92,11 @@ private:
 
 
     // ========================== DEBUG ==========================
-    // XBot::MatLogger2::Ptr _logger;
-    // Eigen::Affine3d pos_real, pos_ref;
-    // Eigen::Matrix3d orient;
-    // ImuSensor::ConstPtr _imu;
-    // Eigen::VectorXd _vel;
+    XBot::MatLogger2::Ptr _logger;
+    Eigen::Affine3d pos_real, pos_ref;
+    Eigen::Matrix3d orient;
+    ImuSensor::ConstPtr _imu;
+    Eigen::VectorXd _vel;
     // bool flag = false;
 
 

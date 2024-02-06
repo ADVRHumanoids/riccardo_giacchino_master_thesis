@@ -83,6 +83,9 @@ public:
      */
     void set_damping_factor(Eigen::Matrix6d damping_factor);
 
+
+    double get_K_omega_z();
+
 private:
 
     // ==============================================================================

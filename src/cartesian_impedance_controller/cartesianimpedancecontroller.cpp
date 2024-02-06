@@ -223,6 +223,8 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::Matrix6
     _Q.noalias() = _Phi.inverse().transpose();
 
     // Debug print
+    // cout << "Leg: " << _task_name << endl;
+    // cout << _end_effector_link << endl;
     //cout << "Q:\n" << _Q << endl;
     //cout << "K_omega:\n" << _K_omega << endl;
     //cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
@@ -309,4 +311,8 @@ void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
 void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_factor){
     _D_zeta = damping_factor;
 
+}
+
+double CartesianImpedanceController::get_K_omega_z(){
+    return _K_omega(2,2);
 }

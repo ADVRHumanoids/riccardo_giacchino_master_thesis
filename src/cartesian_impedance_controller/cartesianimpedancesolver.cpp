@@ -42,9 +42,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
         _stability_controller[task_casted] = std::make_unique<StabilityCompensation>(_model,
                                                                                      task_casted,
                                                                                      vet[i],
-                                                                                     vet2[i],
-                                                                                     25.0,
-                                                                                     15.0);
+                                                                                     vet2[i]);
 
         i++;
 
@@ -66,8 +64,11 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     for (auto& pair : _impedance_controller){
 
-        _stability_controller[pair.first]->update(time, period);
+        // Roll and pitch angle controller
+        // _stability_controller[pair.first]->set_K_p(pair.second->get_K_omega_z());
+        // _stability_controller[pair.first]->update(time, period);
 
+        // Cartesian controller stuff
         pair.first->getImpedance();
         pair.first->getPoseReference(_Tref, &_vel_ref, &_acc_ref);
 
