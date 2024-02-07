@@ -39,6 +39,12 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
     _delta_z_ddot = _delta_z_dot = _delta_z = 0;
     _roll_angle = _roll_acc = 0;
 
+    // ROS stuff
+    _ros = make_unique<RosSupport>(ros::NodeHandle(string("stab_node_" + task->getName())));
+
+    _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::RollPitchController>(string("stab_controller_" + task->getName()), 1);
+    _msg.name = task->getDistalLink();
+
 }
 
 void StabilityCompensation::compute_position_error(){
@@ -56,6 +62,12 @@ void StabilityCompensation::compute_position_error(){
     // ------------ DEBUG ------------
     // print_IMU_data();
 
+    // ------------ LOGGER ------------
+    _msg.roll_angle = _roll_angle;
+    _msg.pitch_angle = _pitch_angle;
+    _msg.angular_vel.x = _angular_vel.x();
+    _msg.angular_vel.y = _angular_vel.y();
+    _msg.angular_vel.z = _angular_vel.z();
 }
 
 // ==============================================================================
@@ -75,16 +87,24 @@ void StabilityCompensation::control_law(){
     // cout << "Roll action: " << _roll_acc << endl;
     // cout << "Pitch action: " << _pitch_acc << endl;
 
+    // ------------ LOGGER ------------
+    _msg.commanded_roll_acc = _roll_acc;
+    _msg.commanded_pitch_acc = _pitch_acc;
+
+
 }
 
 void StabilityCompensation::compute_velocity_error(double dt){
 
+    // Getting the current position between the leg and its relative leg (roll)
     _model->getPose(_task->getDistalLink(), _comparison_leg_roll, _reference_pose);
-    _const_dist_roll = -(_reference_pose.translation().y());
+    _const_dist_roll = -(_reference_pose.translation().y());    // extracting the distance along y direction
 
+    // Getting the current position between the leg and its relative leg (pitch)
     _model->getPose(_task->getDistalLink(), _comparison_leg_pitch, _reference_pose_2);
-    _const_dist_pitch = (_reference_pose_2.translation().x());
+    _const_dist_pitch = (_reference_pose_2.translation().x());  // extracting the distance along x direction
 
+    // Resetting the values (not needed but for safety)
     _reference_pose = _reference_pose_2 = Eigen::Affine3d::Identity();
 
     _delta_z_ddot = _const_dist_roll * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_acc * dt) +
@@ -99,6 +119,11 @@ void StabilityCompensation::compute_velocity_error(double dt){
     // cout << "Delta acceleration: " << _delta_z_ddot << endl;
     // cout << "Delta velocity: " << _delta_z_dot << endl;
     // cout << "Delta position: " << _delta_z << endl;
+
+    // ------------ LOGGER ------------
+    _msg.const_distance_roll = _const_dist_roll;
+    _msg.const_distance_pitch = _const_dist_pitch;
+    _msg.new_delta = {_delta_z_ddot, _delta_z_dot, _delta_z};
 
 }
 
@@ -132,6 +157,8 @@ void StabilityCompensation::update(double time, double period){
     _task->setPoseReference(_reference_pose);
     _task->setVelocityReference(_reference_vel);
     _task->setAccelerationReference(_reference_acc);
+
+    _stats_publisher->publish(_msg);
 
 }
 

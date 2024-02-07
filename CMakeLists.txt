@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(riccardo_giacchino_master_thesis)
 set(CMAKE_CXX_STANDARD 17)
 
+find_package(catkin REQUIRED std_msgs sensor_msgs message_generation)
 find_package(cartesian_interface REQUIRED)
 find_package(xbot2 REQUIRED)
 #find_package(XBotInterface REQUIRED)
@@ -12,6 +13,17 @@ find_package(xbot2 REQUIRED)
 # #    CATKIN_DEPENDS cartesian_interface roscpp rospy std_msgs
 # #  DEPENDS system_lib
 # )
+
+add_message_files(
+    FILES
+    RollPitchController.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
 
 include_directories(
   include/package_first
@@ -25,7 +37,8 @@ add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianim
 target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES})
 
 add_library(stab_implementation SHARED src/cartesian_impedance_controller/stability_compensation.cpp)
-target_link_libraries(stab_implementation ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES})
+add_dependencies(stab_implementation ${PROJECT_NAME}_generate_messages)
+target_link_libraries(stab_implementation ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES} xbot2::xbot2_ros_support)
 
 install(TARGETS imp_controller stab_implementation
     DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})

@@ -14,6 +14,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <xbot2/ros/ros_support.h>
+#include <riccardo_giacchino_master_thesis/RollPitchController.h>
 
 // ==============================================================================
 // Namespace
@@ -102,6 +103,11 @@ private:
     double _delta_z_ddot;
     double _delta_z_dot;
     double _delta_z;
+
+    // Ros support
+    RosSupport::Ptr _ros;
+    riccardo_giacchino_master_thesis::RollPitchController _msg;
+    PublisherPtr<riccardo_giacchino_master_thesis::RollPitchController> _stats_publisher;
 
     // ==============================================================================
     // Additional Private Functions
