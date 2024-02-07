@@ -1,5 +1,9 @@
 #include "stability_compensation.h"
 
+// ==============================================================================
+// Constructor and Destructor
+// ==============================================================================
+
 StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
                                              std::shared_ptr<Cartesian::InteractionTask> task,
                                              string relative_leg_roll,
@@ -44,15 +48,21 @@ void StabilityCompensation::compute_position_error(){
                      _angular_vel);
 
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
-    _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(0, 0) * _orientation_matrix(0, 0) + _orientation_matrix(1, 0) * _orientation_matrix(1, 0)));
+    _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(2, 2) * _orientation_matrix(2, 2) + _orientation_matrix(2, 1) * _orientation_matrix(2, 1)));
+
+    // ------------ SAFETY FEATURES ------------
+    check_angle();
 
     // ------------ DEBUG ------------
-    // cout << "IMU_info:" << endl;
-    // cout << "Roll angle: " << _roll_angle << endl;
-    // cout << "Pitch angle: " << _pitch_angle << endl;
-    // cout << "Angular velocity: " << _angular_vel.transpose() << endl;
-    // cout << "Linear acceleration: " << _linear_acc.transpose() << endl;
+    // print_IMU_data();
+
+    // ------------ LOGGER ------------
+    //
 }
+
+// ==============================================================================
+// Additional Functions
+// ==============================================================================
 
 void StabilityCompensation::control_law(){
 
@@ -84,6 +94,9 @@ void StabilityCompensation::compute_velocity_error(double dt){
 
     _delta_z = (dt * _delta_z_dot) + (0.5 * pow(dt, 2) * _delta_z_ddot);
 
+    // ------------ SAFETY FEATURES ------------
+    check_computed_values();
+
 }
 
 
@@ -93,19 +106,82 @@ void StabilityCompensation::update(double time, double period){
     control_law();
     compute_velocity_error(period);
 
+    // Get reference values of the task
     _task->getPoseReference(_reference_pose, &_reference_vel, &_reference_acc);
 
-    _reference_pose.translation().z() += _delta_z/2;
-    _reference_vel(2) = _delta_z_dot;
-    _reference_acc(2) = _delta_z_ddot;
+    // This check is redundant
+    if (emergency_stop == false){
 
+        // Update the reference values of the task with computed values
+        _reference_pose.translation().z() += _delta_z/2;
+        _reference_vel(2) = _delta_z_dot;
+        _reference_acc(2) = _delta_z_ddot;
+
+    } else {
+
+        _reference_pose.translation().z() += 0.0;
+        _reference_vel(2) = 0.0;
+        _reference_acc(2) = 0.0;
+
+    }
+
+    // Set the updated values
     _task->setPoseReference(_reference_pose);
     _task->setVelocityReference(_reference_vel);
     _task->setAccelerationReference(_reference_acc);
 
 }
 
+// ==============================================================================
+// Safety features
+// ==============================================================================
 
+void StabilityCompensation::check_angle(){
 
+    // Check if the roll angle exceed limit values
+    if (_roll_angle < -_max_angle || _roll_angle > _max_angle){
+        _roll_angle = 0.0;
+        emergency_stop = true;
+        ROS_WARN("The roll angle is over the limit. Set to zero for safety reason");
+    }
 
+    // Check if the pitch angle exceed limit values
+    if (_pitch_angle < -_max_angle || _pitch_angle > _max_angle){
+        _pitch_angle = 0.0;
+        emergency_stop = true;
+        ROS_WARN("The pitch angle is over the limit. Set to zero for safety reason");
+    }
 
+}
+
+void StabilityCompensation::check_computed_values(){
+
+    if (_delta_z_ddot < -_max_acc || _delta_z_ddot > _max_acc){
+        _delta_z_ddot = 0.0;
+        emergency_stop = true;
+        ROS_WARN("The commanded acceleration is over the limit. Set to zero for safety reason");
+    }
+
+    if (_delta_z_dot < -_max_vel || _delta_z_dot > _max_vel){
+        _delta_z_dot = 0.0;
+        emergency_stop = true;
+        ROS_WARN("The commanded velocity is over the limit. Set to zero for safety reason");
+    }
+
+    if (_delta_z < -_max_delta_pos || _delta_z > _max_delta_pos){
+        _delta_z = 0.0;
+        emergency_stop = true;
+        ROS_WARN("The new computed reference position is over the limit. Set to zero for safety reason");
+    }
+
+}
+
+void StabilityCompensation::print_IMU_data(){
+
+    cout << "IMU_info:" << endl;
+    cout << "Roll angle: " << _roll_angle << endl;
+    cout << "Pitch angle: " << _pitch_angle << endl;
+    cout << "Angular velocity: " << _angular_vel.transpose() << endl;
+    cout << "Linear acceleration: " << _linear_acc.transpose() << endl;
+
+}

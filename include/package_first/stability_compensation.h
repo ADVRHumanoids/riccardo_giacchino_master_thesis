@@ -1,7 +1,9 @@
 #ifndef STABILITY_COMPENSATION_H
 #define STABILITY_COMPENSATION_H
 
-
+// ==============================================================================
+// Include
+// ==============================================================================
 
 #include <cartesian_interface/CartesianInterfaceImpl.h> // For the solver
 #include <RobotInterfaceROS/ConfigFromParam.h>  // Model param config
@@ -11,9 +13,18 @@
 #include <xbot2/hal/dev_ft.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <xbot2/ros/ros_support.h>
+
+// ==============================================================================
+// Namespace
+// ==============================================================================
 
 using namespace XBot;
 using namespace std;
+
+// ==============================================================================
+// Class
+// ==============================================================================
 
 /**
  * @brief The StabilityCompensation class provides functionality for stability compensation in a robotic system.
@@ -24,6 +35,10 @@ class StabilityCompensation
 {
 
 public:
+
+    // ==============================================================================
+    // Constructor and Destructor
+    // ==============================================================================
 
     /**
      * @brief Constructor for StabilityCompensation.
@@ -42,6 +57,10 @@ public:
                           double K_p_roll,
                           double K_p_pitch);
 
+    // ==============================================================================
+    // Additional Functions
+    // ==============================================================================
+
     /**
      * @brief Update the stability compensation based on the current state of the system.
      *
@@ -51,6 +70,10 @@ public:
     void update(double time, double period);
 
 private:
+
+    // ==============================================================================
+    // Variables
+    // ==============================================================================
 
     ModelInterface::Ptr _model;
 
@@ -80,11 +103,51 @@ private:
     double _delta_z_dot;
     double _delta_z;
 
+    // ==============================================================================
+    // Additional Private Functions
+    // ==============================================================================
+
+    /**
+     * @brief compute_position_error
+     */
     void compute_position_error();
 
+    /**
+     * @brief compute_velocity_error
+     * @param dt
+     */
     void compute_velocity_error(double dt);
 
+    /**
+     * @brief control_law
+     */
     void control_law();
+
+    // ==============================================================================
+    // Safety features
+    // ==============================================================================
+
+    bool emergency_stop = false;
+    double _max_angle = 15 * M_PI / 180; // conversion from 15° to rad
+    double _max_acc = 10;   // is the limit value for the commanded acceleration computed by the control law of both pitch and roll controller
+    double _max_vel = 10;   // is the limit value for the commanded velocity computed by the integration of the commanded acceleration
+    double _max_delta_pos = 0.07;  // set the limit for the change in position computed by the controller to 7 cm
+
+    /**
+     * @brief check_angle
+     */
+    void check_angle();
+
+    /**
+     * @brief check_computed_values
+     */
+    void check_computed_values();
+
+    /**
+     * @brief print_IMU_data
+     */
+    void print_IMU_data();
+
 
 };
 
