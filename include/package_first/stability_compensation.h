@@ -128,11 +128,8 @@ private:
     // ==============================================================================
 
     bool emergency_stop = false;
-    double _max_angle = 15 * M_PI / 180; // conversion from 15° to rad
-    double _max_acc = 10;   // is the limit value for the commanded acceleration computed by the control law of both pitch and roll controller
-    double _max_vel = 10;   // is the limit value for the commanded velocity computed by the integration of the commanded acceleration
-    double _max_delta_pos = 0.07;  // set the limit for the change in position computed by the controller to 7 cm
-
+    double _max_angle = 5 * M_PI / 180; // conversion from 15° to rad
+    double _max_control_action = 1.0;    // TODO: Check the unit of this value
     /**
      * @brief check_angle
      */

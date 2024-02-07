@@ -56,8 +56,6 @@ void StabilityCompensation::compute_position_error(){
     // ------------ DEBUG ------------
     // print_IMU_data();
 
-    // ------------ LOGGER ------------
-    //
 }
 
 // ==============================================================================
@@ -69,6 +67,9 @@ void StabilityCompensation::control_law(){
     _roll_acc = - _K_v_roll * (_angular_vel.x()) - _K_p_roll * (_roll_angle);
 
     _pitch_acc = - _K_v_pitch * (_angular_vel.y()) - _K_p_pitch * (_pitch_angle);
+
+    // ------------ SAFETY FEATURES ------------
+    check_computed_values();
 
     // ------------ DEBUG ------------
     // cout << "Roll action: " << _roll_acc << endl;
@@ -94,8 +95,10 @@ void StabilityCompensation::compute_velocity_error(double dt){
 
     _delta_z = (dt * _delta_z_dot) + (0.5 * pow(dt, 2) * _delta_z_ddot);
 
-    // ------------ SAFETY FEATURES ------------
-    check_computed_values();
+    // ------------ DEBUG ------------
+    // cout << "Delta acceleration: " << _delta_z_ddot << endl;
+    // cout << "Delta velocity: " << _delta_z_dot << endl;
+    // cout << "Delta position: " << _delta_z << endl;
 
 }
 
@@ -142,36 +145,26 @@ void StabilityCompensation::check_angle(){
     if (_roll_angle < -_max_angle || _roll_angle > _max_angle){
         _roll_angle = 0.0;
         emergency_stop = true;
-        ROS_WARN("The roll angle is over the limit. Set to zero for safety reason");
+        cerr << "[WARNING]: The roll angle is over the limit. Set to zero for safety reason" << endl;
     }
 
     // Check if the pitch angle exceed limit values
     if (_pitch_angle < -_max_angle || _pitch_angle > _max_angle){
         _pitch_angle = 0.0;
         emergency_stop = true;
-        ROS_WARN("The pitch angle is over the limit. Set to zero for safety reason");
+        cerr << "[WARNING]: The pitch angle is over the limit. Set to zero for safety reason" << endl;
     }
 
 }
 
 void StabilityCompensation::check_computed_values(){
 
-    if (_delta_z_ddot < -_max_acc || _delta_z_ddot > _max_acc){
-        _delta_z_ddot = 0.0;
-        emergency_stop = true;
-        ROS_WARN("The commanded acceleration is over the limit. Set to zero for safety reason");
-    }
+    if (abs(_roll_acc) > _max_control_action || abs(_pitch_acc) > _max_control_action){
 
-    if (_delta_z_dot < -_max_vel || _delta_z_dot > _max_vel){
-        _delta_z_dot = 0.0;
+        _roll_acc = _pitch_acc = 0.0;
         emergency_stop = true;
-        ROS_WARN("The commanded velocity is over the limit. Set to zero for safety reason");
-    }
+        cerr << "[WARNING]: Control action is over the ceiling BROOOOO!!! I'm gonna stop it" << endl;
 
-    if (_delta_z < -_max_delta_pos || _delta_z > _max_delta_pos){
-        _delta_z = 0.0;
-        emergency_stop = true;
-        ROS_WARN("The new computed reference position is over the limit. Set to zero for safety reason");
     }
 
 }

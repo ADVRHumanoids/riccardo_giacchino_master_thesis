@@ -43,7 +43,7 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
                                                                                      task_casted,
                                                                                      vet[i],
                                                                                      vet2[i],
-                                                                                     0,
+                                                                                     4,
                                                                                      4);
 
         i++;
