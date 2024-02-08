@@ -120,10 +120,10 @@ private:
     void compute_position_error();
 
     /**
-     * @brief compute_velocity_error
+     * @brief convertion_to_leg_motion
      * @param dt
      */
-    void compute_velocity_error(double dt);
+    void convertion_to_leg_motion(double dt);
 
     /**
      * @brief control_law

@@ -95,7 +95,7 @@ void ControllerManager::on_start()
     // activate ros wrapper
     _ros_wrapper->activate(true);
 
-    cout << "[INFO]: Cartesian impedance control is starting!" << endl;
+    cout << "[INFO]: Controller is starting!" << endl;
 }
 
 void ControllerManager::run()
@@ -172,7 +172,7 @@ void ControllerManager::on_stop()
 
     _robot->move();
 
-    cout << "[INFO]: Cartesian impedance control is stopping!" << endl;
+    cout << "[INFO]: Controller is stopping!" << endl;
 
     // ============================== DEBUG ==============================
     //_logger.reset();

@@ -95,7 +95,7 @@ void StabilityCompensation::control_law(){
 
 }
 
-void StabilityCompensation::compute_velocity_error(double dt){
+void StabilityCompensation::convertion_to_leg_motion(double dt){
 
     // Getting the current position between the leg and its relative leg (roll)
     _model->getPose(_task->getDistalLink(), _comparison_leg_roll, _reference_pose);
@@ -135,7 +135,7 @@ void StabilityCompensation::update(double time, double period){
 
     compute_position_error();
     control_law();
-    compute_velocity_error(period);
+    convertion_to_leg_motion(period);
 
     // Get reference values of the task
     _task->getPoseReference(_reference_pose, &_reference_vel, &_reference_acc);
