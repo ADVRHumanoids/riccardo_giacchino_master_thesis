@@ -23,10 +23,6 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
 
     }
 
-    vector<string> vet = {"contact_2", "contact_1", "contact_4", "contact_3"};
-    vector<string> vet2 = {"contact_3", "contact_4", "contact_1", "contact_2"};
-    int i = 0;
-
     // Create all controller for each InteractionTask
     for (auto& task_casted : _tasks_casted){
 
@@ -38,15 +34,6 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
                                                                                   task_casted->getDistalLink(),
                                                                                   task_casted->getBaseLink(),
                                                                                   task_casted->getName());
-
-        _stability_controller[task_casted] = std::make_unique<StabilityCompensation>(_model,
-                                                                                     task_casted,
-                                                                                     vet[i],
-                                                                                     vet2[i],
-                                                                                     4,
-                                                                                     4);
-
-        i++;
 
     }
 
@@ -65,8 +52,6 @@ bool CartesianImpedanceSolver::update(double time, double period){
     _effort = Eigen::VectorXd::Zero(_model->getJointNum()); // reset to zero the effort
 
     for (auto& pair : _impedance_controller){
-
-        _stability_controller[pair.first]->update(time, period);
 
         pair.first->getImpedance();
         pair.first->getPoseReference(_Tref, &_vel_ref, &_acc_ref);

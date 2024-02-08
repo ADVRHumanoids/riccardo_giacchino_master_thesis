@@ -1,0 +1,31 @@
+Leg1:
+  Roll:
+    Gain: 10
+    relative_leg: contact_2
+  Pitch:
+    Gain: 10
+    relative_leg: contact_3
+
+Leg2:
+  Roll:
+    Gain: 10
+    relative_leg: contact_1
+  Pitch:
+    Gain: 10
+    relative_leg: contact_4
+
+Leg3:
+  Roll:
+    Gain: 10
+    relative_leg: contact_4
+  Pitch:
+    Gain: 10
+    relative_leg: contact_1
+
+Leg4:
+  Roll:
+    Gain: 10
+    relative_leg: contact_3
+  Pitch:
+    Gain: 10
+    relative_leg: contact_2

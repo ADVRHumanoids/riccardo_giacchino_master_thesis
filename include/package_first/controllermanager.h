@@ -90,6 +90,9 @@ private:
 
     vector<Eigen::MatrixXd> _J_leg;
 
+    // Controller of the roll and pitch angle
+    map<std::shared_ptr<InteractionTask>, std::unique_ptr<StabilityCompensation>> _stability_controller;
+    YAML::Node _config_parameters_stab_controller;
 
     // ========================== DEBUG ==========================
     // XBot::MatLogger2::Ptr _logger;
@@ -127,6 +130,8 @@ private:
     void compute_gravity_compensation();
 
     void control_law();
+
+    void stability_controller_initialization();
 
 };
 

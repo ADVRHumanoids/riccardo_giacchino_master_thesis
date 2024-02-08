@@ -87,9 +87,6 @@ private:
     // Map allows for the association of each InteractionTask pointer with a unique Cartesian Impedance Controller
     map<std::shared_ptr<InteractionTask>, std::unique_ptr<CartesianImpedanceController>> _impedance_controller;
 
-
-    map<std::shared_ptr<InteractionTask>, std::unique_ptr<StabilityCompensation>> _stability_controller;
-
     Eigen::VectorXd _effort;
 
     Eigen::Affine3d _Tref;  // to set the pose reference

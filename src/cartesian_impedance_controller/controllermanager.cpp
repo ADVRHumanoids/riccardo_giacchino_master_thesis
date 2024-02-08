@@ -16,11 +16,13 @@ bool ControllerManager::on_initialize()
     _model->update();
 
     // Take the path to the problem definition file
-    auto ik_pb_yaml = YAML::LoadFile(getParamOrThrow<string>("~stack_path"));
+    _config_parameters_stab_controller = YAML::LoadFile(getParamOrThrow<string>("~stab_controller_path"));
 
-    _ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<Parameters>(_dt),  //WARNING: handle _dt
+    _ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<Parameters>(_dt),
                                      _model);
-    ProblemDescription pb(ik_pb_yaml, _ctx);
+
+    ProblemDescription pb(YAML::LoadFile(getParamOrThrow<string>("~stack_path")),
+                          _ctx);
 
     // Solver creation
     _solver = CartesianInterfaceImpl::MakeInstance("ImpSolver",
@@ -38,6 +40,9 @@ bool ControllerManager::on_initialize()
 
     // Set control mode for the joints found in the previous function
     setDefaultControlMode(_ctrl_map);
+
+    // ----------------------------------------------------------------------------- TODO: comments
+    stability_controller_initialization();
 
     // Initialize usefull variable
     _torque_cartesian = _torque_contact = _torque = Eigen::VectorXd::Zero(_model->getJointNum());
@@ -99,7 +104,14 @@ void ControllerManager::run()
     _ros_wrapper->receive();
 
     _robot->sense();
-    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);    
+    _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
+
+    // Update the reference values for the
+    for (auto& pair : _stability_controller){
+
+        _stability_controller[pair.first]->update(_time, _dt);
+
+    }
 
     // CartesIO pluing update will compute the torque base on the controller and set them into the model
     _solver->update(_time, _dt);
@@ -111,7 +123,7 @@ void ControllerManager::run()
 
     control_law();
 
-    // Set them in the robot
+    // Set the torque in the robot
     _robot->setEffortReference(_torque.tail(_robot->getJointNum()));
 
     _model->update();
@@ -129,7 +141,7 @@ void ControllerManager::run()
     //
     _ros_wrapper->send();
 
-    // ============================== DEBUG ==============================
+    // ============================== LOGGER ==============================
     // _imu->getOrientation(orient);
     // _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
     // for (auto task : _tasks_casted){
@@ -300,6 +312,24 @@ void ControllerManager::control_law(){
 
     // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
     _torque.noalias() = _torque_cartesian + _gravity_torque + _torque_contact + _non_linear_torque + _total_Jd_Qd;
+
+}
+
+void ControllerManager::stability_controller_initialization(){
+
+    int i = 0;
+
+    for (YAML::const_iterator it = _config_parameters_stab_controller.begin(); it != _config_parameters_stab_controller.end(); ++it) {
+
+        // Create StabilityController with the read parameters
+        _stability_controller[_tasks_casted[i]] = std::make_unique<StabilityCompensation>(_model,
+                                                                                          _tasks_casted[i],
+                                                                                          it->second["Roll"]["relative_leg"].as<std::string>(),
+                                                                                          it->second["Pitch"]["relative_leg"].as<std::string>(),
+                                                                                          it->second["Roll"]["Gain"].as<int>(),
+                                                                                          it->second["Pitch"]["Gain"].as<int>());
+        i++;
+    }
 
 }
 
