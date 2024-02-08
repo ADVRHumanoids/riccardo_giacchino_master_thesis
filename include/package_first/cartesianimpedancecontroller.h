@@ -15,8 +15,11 @@
 #include <XBotInterface/RobotInterface.h>   // Robot generation
 #include <xbot2/xbot2.h>
 #include <xbot2/hal/dev_ft.h>
+#include <eigen_conversions/eigen_msg.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <xbot2/ros/ros_support.h>
+#include <riccardo_giacchino_master_thesis/CartesianController.h>
 
 // ==============================================================================
 // Namespace
@@ -151,6 +154,12 @@ private:
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix6d> _eigen_solver;
     Eigen::JacobiSVD<Eigen::Matrix6d> _svd;
 
+    // Ros support
+    RosSupport::Ptr _ros;
+    riccardo_giacchino_master_thesis::CartesianController _msg;
+    PublisherPtr<riccardo_giacchino_master_thesis::CartesianController> _stats_publisher;
+
+
     // ==============================================================================
     // Additional Private Functions
     // ==============================================================================
@@ -233,6 +242,10 @@ private:
      * associated with a specific task.
      */
     void print_config_param();
+
+    void vectorEigenToMsg(Eigen::VectorXd vect);
+
+
 
 };
 

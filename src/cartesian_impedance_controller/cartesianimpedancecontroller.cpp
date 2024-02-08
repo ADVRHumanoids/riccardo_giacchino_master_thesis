@@ -56,6 +56,12 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     //Print of configuration parameters
     print_config_param();
 
+    // ROS stuff
+    _ros = make_unique<RosSupport>(ros::NodeHandle(string("cartesian_controller_node_" + _task_name)));
+
+    _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::CartesianController>(string("cart_controller_" + _task_name), 1);
+    _msg.name = _end_effector_link;
+
 }
 
 // ==============================================================================
@@ -105,6 +111,10 @@ void CartesianImpedanceController::update_real_value()
     // Get velocity
     _model->getRelativeVelocityTwist(_end_effector_link, _root_link, _xdot_real);
 
+    // --------------- LOGGER ---------------
+    tf::poseEigenToMsg(_x_real, _msg.real_position);
+    tf::twistEigenToMsg(_xdot_real, _msg.real_velocity);
+
 }
 
 void CartesianImpedanceController::compute_error()
@@ -123,6 +133,10 @@ void CartesianImpedanceController::compute_error()
     // Debug print
     //cout << "Pos error:\n" << _e << endl;
     //cout << "Vel error:\n" << _edot << endl;
+
+    // --------------- LOGGER ---------------
+    tf::twistEigenToMsg(_e, _msg.position_error);
+    tf::twistEigenToMsg(_edot, _msg.velocity_error);
 
 }
 
@@ -157,6 +171,11 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     //Debug print
     //cout << torque.transpose() << endl;
     //cout << "Force:\n" << _force << endl;
+
+    // --------------- LOGGER ---------------
+    tf::wrenchEigenToMsg(_force, _msg.force);
+    _stats_publisher->publish(_msg);
+
 
     // The model works with 46 joints (first 6 of the floating base), while the robot works with 40 joints
     // (exclude the floating base joints). If working with RobotInterface then return _torque.tail(40), otherwise
@@ -300,6 +319,10 @@ void CartesianImpedanceController::set_reference_value(Eigen::Affine3d Tref, Eig
     _x_ref = Tref;
     _xdot_ref = xdot_ref;
     _xddot_ref = xddot_ref;
+
+    tf::poseEigenToMsg(_x_ref, _msg.reference_position);
+    tf::twistEigenToMsg(_xdot_ref, _msg.reference_velocity);
+    tf::twistEigenToMsg(_xddot_ref, _msg.reference_acceleration);
 }
 
 void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
@@ -308,5 +331,18 @@ void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
 
 void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_factor){
     _D_zeta = damping_factor;
+}
+
+void CartesianImpedanceController::vectorEigenToMsg(Eigen::VectorXd vect){
+
+    for (int i = 0; i < _torque.size(); i++){
+        _msg.torque[i] = _torque(i);
+    }
+
+    for (int i = 0; i < _K_omega.diagonalSize(); i++){
+        _msg.K_omega[i] = _K_omega.diagonal()(i);
+    }
+
 
 }
+

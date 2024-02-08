@@ -17,6 +17,7 @@ find_package(xbot2 REQUIRED)
 add_message_files(
     FILES
     RollPitchController.msg
+    CartesianController.msg
 )
 
 generate_messages(
@@ -34,7 +35,8 @@ include_directories(
 )
 
 add_library(imp_controller SHARED src/cartesian_impedance_controller/cartesianimpedancecontroller.cpp)
-target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES})
+add_dependencies(imp_controller ${PROJECT_NAME}_generate_messages)
+target_link_libraries(imp_controller ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES} xbot2::xbot2 ${XBotInterface_LIBRARIES} xbot2::xbot2_ros_support)
 
 add_library(stab_implementation SHARED src/cartesian_impedance_controller/stability_compensation.cpp)
 add_dependencies(stab_implementation ${PROJECT_NAME}_generate_messages)
