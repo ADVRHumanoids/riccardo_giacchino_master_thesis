@@ -39,9 +39,10 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
     _delta_z_ddot = _delta_z_dot = _delta_z = 0;
     _roll_angle = _roll_acc = 0;
 
+    print_config_param();
+
     // ROS stuff
     _ros = make_unique<RosSupport>(ros::NodeHandle(string("stab_node_" + task->getName())));
-
     _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::RollPitchController>(string("stab_controller_" + task->getName()), 1);
     _msg.name = task->getDistalLink();
 
@@ -123,7 +124,9 @@ void StabilityCompensation::compute_velocity_error(double dt){
     // ------------ LOGGER ------------
     _msg.const_distance_roll = _const_dist_roll;
     _msg.const_distance_pitch = _const_dist_pitch;
-    _msg.new_delta = {_delta_z_ddot, _delta_z_dot, _delta_z};
+    _msg.delta_pos = _delta_z;
+    _msg.delta_vel = _delta_z_dot;
+    _msg.delta_acc = _delta_z_ddot;
 
 }
 
@@ -136,6 +139,11 @@ void StabilityCompensation::update(double time, double period){
 
     // Get reference values of the task
     _task->getPoseReference(_reference_pose, &_reference_vel, &_reference_acc);
+
+    // ------------ LOGGER ------------
+    tf::poseEigenToMsg(_reference_pose, _msg.old_reference_position);
+    tf::twistEigenToMsg(_reference_vel, _msg.old_reference_velocity);
+    tf::twistEigenToMsg(_reference_acc, _msg.old_reference_acceleration);
 
     // This check is redundant
     if (emergency_stop == false){
@@ -157,6 +165,11 @@ void StabilityCompensation::update(double time, double period){
     _task->setPoseReference(_reference_pose);
     _task->setVelocityReference(_reference_vel);
     _task->setAccelerationReference(_reference_acc);
+
+    // ------------ LOGGER ------------
+    tf::poseEigenToMsg(_reference_pose, _msg.reference_position);
+    tf::twistEigenToMsg(_reference_vel, _msg.reference_velocity);
+    tf::twistEigenToMsg(_reference_acc, _msg.reference_acceleration);
 
     _stats_publisher->publish(_msg);
 
@@ -203,5 +216,20 @@ void StabilityCompensation::print_IMU_data(){
     cout << "Pitch angle: " << _pitch_angle << endl;
     cout << "Angular velocity: " << _angular_vel.transpose() << endl;
     cout << "Linear acceleration: " << _linear_acc.transpose() << endl;
+
+}
+
+void StabilityCompensation::print_config_param(){
+
+    cout << "[OK] Successfully created controller for task " << _task->getName() << endl;
+    cout << "ROLL CONTROLLER:" << endl;
+    cout << "- K_p = " << _K_p_roll << endl;
+    cout << "- K_v = " << _K_v_roll << endl;
+    cout << "- Relative leg: " << _comparison_leg_roll << endl;
+    cout << "PITCH CONTROLLER:" << endl;
+    cout << "- K_p = " << _K_p_pitch << endl;
+    cout << "- K_v = " << _K_v_pitch << endl;
+    cout << "- Relative leg: " << _comparison_leg_pitch << endl;
+    cout << "=====================================================" << endl;
 
 }

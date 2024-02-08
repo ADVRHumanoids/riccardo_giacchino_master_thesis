@@ -15,6 +15,7 @@
 #include <Eigen/Geometry>
 #include <xbot2/ros/ros_support.h>
 #include <riccardo_giacchino_master_thesis/RollPitchController.h>
+#include <eigen_conversions/eigen_msg.h>
 
 // ==============================================================================
 // Namespace
@@ -150,6 +151,8 @@ private:
      * @brief print_IMU_data
      */
     void print_IMU_data();
+
+    void print_config_param();
 
 
 };

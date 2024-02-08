@@ -319,6 +319,8 @@ void ControllerManager::stability_controller_initialization(){
 
     int i = 0;
 
+    // TODO change and pass const_iterator directly to the constructor
+
     for (YAML::const_iterator it = _config_parameters_stab_controller.begin(); it != _config_parameters_stab_controller.end(); ++it) {
 
         // Create StabilityController with the read parameters
