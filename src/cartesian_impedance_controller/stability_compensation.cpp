@@ -54,7 +54,7 @@ void StabilityCompensation::compute_position_error(){
                      _linear_acc,
                      _angular_vel);
 
-    _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
+    // _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
     _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(2, 2) * _orientation_matrix(2, 2) + _orientation_matrix(2, 1) * _orientation_matrix(2, 1)));
 
     // ------------ SAFETY FEATURES ------------
