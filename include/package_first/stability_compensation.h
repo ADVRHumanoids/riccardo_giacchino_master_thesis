@@ -135,8 +135,8 @@ private:
     // ==============================================================================
 
     bool emergency_stop = false;
-    double _max_angle = 5 * M_PI / 180; // conversion from 15° to rad
-    double _max_control_action = 1.0;    // TODO: Check the unit of this value
+    double _max_angle = 10 * M_PI / 180; // conversion from 15° to rad
+    double _max_control_action = 4.0;    // TODO: Check the unit of this value
     /**
      * @brief check_angle
      */
