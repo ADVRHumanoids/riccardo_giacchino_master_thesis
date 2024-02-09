@@ -54,10 +54,7 @@ public:
      */
     StabilityCompensation(ModelInterface::Ptr model,
                           std::shared_ptr<Cartesian::InteractionTask> task,
-                          string relative_leg_roll,
-                          string relative_leg_pitch,
-                          double K_p_roll,
-                          double K_p_pitch);
+                          YAML::const_iterator yaml_it);
 
     // ==============================================================================
     // Additional Functions
@@ -95,10 +92,12 @@ private:
 
     Eigen::Vector6d _reference_vel, _reference_acc;
 
-    double _K_v_roll, _K_p_roll;
-    double _K_v_pitch, _K_p_pitch;
+    double _K_v_roll, _K_p_roll, _damping_factor_roll;
+    double _K_v_pitch, _K_p_pitch, _damping_factor_pitch;
 
-    double _roll_angle, _roll_acc, _pitch_angle, _pitch_acc;
+    Eigen::Vector3d _rpy;
+    double _roll_angle, _roll_acc;
+    double _pitch_angle, _pitch_acc;
     double _const_dist_roll, _const_dist_pitch;
 
     double _delta_z_ddot;
@@ -135,8 +134,8 @@ private:
     // ==============================================================================
 
     bool emergency_stop = false;
-    double _max_angle = 10 * M_PI / 180; // conversion from 15° to rad
-    double _max_control_action = 4.0;    // TODO: Check the unit of this value
+    double _max_angle;  // [rad]
+    double _max_control_action; // [rad/s²]
     /**
      * @brief check_angle
      */
@@ -146,6 +145,8 @@ private:
      * @brief check_computed_values
      */
     void check_computed_values();
+
+    void extract_data_from_YAML_file(YAML::const_iterator yaml_it);
 
     /**
      * @brief print_IMU_data

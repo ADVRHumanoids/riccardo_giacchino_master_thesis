@@ -6,19 +6,12 @@
 
 StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
                                              std::shared_ptr<Cartesian::InteractionTask> task,
-                                             string relative_leg_roll,
-                                             string relative_leg_pitch,
-                                             double K_p_roll,
-                                             double K_p_pitch):
+                                             YAML::const_iterator it):
     _model(model),
-    _task(task),
-    _comparison_leg_roll(relative_leg_roll),
-    _comparison_leg_pitch(relative_leg_pitch),
-    _K_p_roll(K_p_roll),
-    _K_p_pitch(K_p_pitch)
+    _task(task)
 {
 
-    // TODO: Convert all these variable into a vector of two elements
+    extract_data_from_YAML_file(it);
 
     _imu = _model->getImu("pelvis");
 
@@ -26,8 +19,8 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
         cerr << "[ERROR]: Null pointer to the IMU" << endl;
     }
 
-    _K_v_roll = 0.3 * 2 * sqrt(_K_p_roll);
-    _K_v_pitch = 0.3 * 2 * sqrt(_K_p_pitch);
+    _K_v_roll = _damping_factor_roll * 2 * sqrt(_K_p_roll);
+    _K_v_pitch = _damping_factor_pitch * 2 * sqrt(_K_p_pitch);
 
     _orientation_matrix =  Eigen::Matrix3d::Identity();
     _angular_vel = _linear_acc = Eigen::Vector3d::Zero();
@@ -56,10 +49,6 @@ void StabilityCompensation::compute_position_error(){
 
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
     _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(2, 2) * _orientation_matrix(2, 2) + _orientation_matrix(2, 1) * _orientation_matrix(2, 1)));
-
-    // rpy = _orientation_matrix.eulerAngles(0, 1, 2);
-    // _roll_angle = rpy(0);
-    // _pithc_angle = rpy(1);
 
     // ------------ SAFETY FEATURES ------------
     check_angle();
@@ -213,6 +202,19 @@ void StabilityCompensation::check_computed_values(){
 
 }
 
+void StabilityCompensation::extract_data_from_YAML_file(YAML::const_iterator it){
+
+    _comparison_leg_roll = it->second["Roll"]["relative_leg"].as<std::string>();
+    _comparison_leg_pitch = it->second["Pitch"]["relative_leg"].as<std::string>();
+    _K_p_roll = it->second["Roll"]["Gain"].as<int>();
+    _K_p_pitch = it->second["Pitch"]["Gain"].as<int>();
+    _damping_factor_roll = it->second["Roll"]["Dampint_fator"].as<double>();
+    _damping_factor_pitch = it->second["Pitch"]["Dampint_fator"].as<double>();
+    _max_angle = it->second["Safety_limit"]["max_angle"].as<int>() * M_PI / 180;
+    _max_control_action = it->second["Safety_limit"]["max_control_action"].as<double>();
+
+}
+
 void StabilityCompensation::print_IMU_data(){
 
     cout << "IMU_info:" << endl;
@@ -229,10 +231,12 @@ void StabilityCompensation::print_config_param(){
     cout << "ROLL CONTROLLER:" << endl;
     cout << "- K_p = " << _K_p_roll << endl;
     cout << "- K_v = " << _K_v_roll << endl;
+    cout << "- ζ = " << _damping_factor_roll << endl;
     cout << "- Relative leg: " << _comparison_leg_roll << endl;
     cout << "PITCH CONTROLLER:" << endl;
     cout << "- K_p = " << _K_p_pitch << endl;
     cout << "- K_v = " << _K_v_pitch << endl;
+    cout << "- ζ = " << _damping_factor_pitch << endl;
     cout << "- Relative leg: " << _comparison_leg_pitch << endl;
     cout << "=====================================================" << endl;
 

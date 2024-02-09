@@ -175,7 +175,7 @@ void ControllerManager::on_stop()
     cout << "[INFO]: Controller is stopping!" << endl;
 
     // ============================== DEBUG ==============================
-    //_logger.reset();
+    _logger.reset();
 
 }
 
@@ -253,7 +253,6 @@ void ControllerManager::joint_map_generator(){
 
 }
 
-
 void ControllerManager::compute_gravity_compensation(){
 
     _model->computeGravityCompensation(_gravity_torque);
@@ -311,7 +310,11 @@ void ControllerManager::control_law(){
     _model->computeNonlinearTerm(_non_linear_torque);
 
     // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
-    _torque.noalias() = _torque_cartesian + _gravity_torque + _torque_contact + _non_linear_torque + _total_Jd_Qd;
+    _torque.noalias() = _torque_cartesian + _torque_contact + _non_linear_torque + _total_Jd_Qd;
+
+    // _logger->add("non_linear_terms", _non_linear_torque);
+    // _logger->add("gravity", _gravity_torque);
+    // _logger->add("contact", _torque_contact);
 
 }
 
@@ -319,17 +322,12 @@ void ControllerManager::stability_controller_initialization(){
 
     int i = 0;
 
-    // TODO change and pass const_iterator directly to the constructor
-
-    for (YAML::const_iterator it = _config_parameters_stab_controller.begin(); it != _config_parameters_stab_controller.end(); ++it) {
+    for (auto it = _config_parameters_stab_controller.begin(); it != _config_parameters_stab_controller.end(); ++it) {
 
         // Create StabilityController with the read parameters
         _stability_controller[_tasks_casted[i]] = std::make_unique<StabilityCompensation>(_model,
                                                                                           _tasks_casted[i],
-                                                                                          it->second["Roll"]["relative_leg"].as<std::string>(),
-                                                                                          it->second["Pitch"]["relative_leg"].as<std::string>(),
-                                                                                          it->second["Roll"]["Gain"].as<int>(),
-                                                                                          it->second["Pitch"]["Gain"].as<int>());
+                                                                                          it);
         i++;
     }
 

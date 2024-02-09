@@ -95,7 +95,7 @@ private:
     YAML::Node _config_parameters_stab_controller;
 
     // ========================== DEBUG ==========================
-    // XBot::MatLogger2::Ptr _logger;
+    XBot::MatLogger2::Ptr _logger;
     // Eigen::Affine3d pos_real, pos_ref;
     // Eigen::Matrix3d orient;
     // ImuSensor::ConstPtr _imu;
