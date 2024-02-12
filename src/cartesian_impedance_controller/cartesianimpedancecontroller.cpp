@@ -314,5 +314,5 @@ void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_fa
 }
 
 double CartesianImpedanceController::get_K_omega_z(){
-    return _K_omega(2,2);
+    return _op_sp_inertia(2,2);
 }

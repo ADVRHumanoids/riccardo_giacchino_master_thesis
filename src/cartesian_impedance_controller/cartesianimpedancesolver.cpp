@@ -64,12 +64,14 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     for (auto& pair : _impedance_controller){
 
+        pair.first->getImpedance();
+
         // Roll and pitch angle controller
-        // _stability_controller[pair.first]->set_K_p(pair.second->get_K_omega_z());
-        // _stability_controller[pair.first]->update(time, period);
+        _stability_controller[pair.first]->set_K_p(pair.first->getImpedance().stiffness.diagonal()(2)/pair.second->get_K_omega_z());
+        _stability_controller[pair.first]->update(time, period);
 
         // Cartesian controller stuff
-        pair.first->getImpedance();
+
         pair.first->getPoseReference(_Tref, &_vel_ref, &_acc_ref);
 
         _impedance_controller[pair.first]->set_stiffness(pair.first->getImpedance().stiffness);

@@ -130,8 +130,8 @@ void ControllerManager::run()
     _ros_wrapper->send();
 
     // ============================== DEBUG ==============================
-    // _imu->getOrientation(orient);
-    // _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
+    _imu->getOrientation(orient);
+    _logger->add("Roll_angle", atan2(orient(2, 1), orient(2, 2)));
     for (auto task : _tasks_casted){
         _model->getPose(task->getDistalLink(), task->getBaseLink(), pos_real);
         task->getPoseReference(pos_ref);

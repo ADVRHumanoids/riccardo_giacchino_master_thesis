@@ -90,10 +90,11 @@ void StabilityCompensation::update(double time, double period){
 
 void StabilityCompensation::set_K_p(double cartesian_omega_z){
 
-    // _K_p_roll = _K_p_pitch = cartesian_omega_z / 100;
-    _K_p_roll = _K_p_pitch = 15;
-    _K_v_roll = 2 * sqrt(_K_p_roll);
-    _K_v_pitch = 2 * sqrt(_K_p_pitch);
+    _K_p_roll = _K_p_pitch = cartesian_omega_z / pow(24.9 * 0.5 ,2);
+    cout << _task->getName() << " " << _K_p_roll << "--" << _K_p_pitch << endl;
+    //_K_p_roll = _K_p_pitch = 15;
+    _K_v_roll = 2 * 0.5 * sqrt(_K_p_roll);
+    _K_v_pitch = 2 * 0.5 * sqrt(_K_p_pitch);
 
 }
 
