@@ -31,6 +31,9 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
 
     _delta_z_ddot = _delta_z_dot = _delta_z = 0;
     _roll_angle = _roll_acc = 0;
+    _pitch_angle = _pitch_acc = 0;
+
+    roll_cmd = roll_dot_cmd = pitch_cmd = pitch_dot_cmd = 0;
 
     print_config_param();
 
@@ -50,8 +53,10 @@ void StabilityCompensation::compute_position_error(){
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
     _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(2, 2) * _orientation_matrix(2, 2) + _orientation_matrix(2, 1) * _orientation_matrix(2, 1)));
 
+    _model->setFloatingBaseOrientation(_orientation_matrix);
+
     // ------------ SAFETY FEATURES ------------
-    check_angle();
+    // check_angle();
 
     // ------------ DEBUG ------------
     // print_IMU_data();
@@ -75,7 +80,7 @@ void StabilityCompensation::control_law(){
     _pitch_acc = - _K_v_pitch * (_angular_vel.y()) - _K_p_pitch * (_pitch_angle);
 
     // ------------ SAFETY FEATURES ------------
-    check_computed_values();
+    // check_computed_values();
 
     // ------------ DEBUG ------------
     // cout << "Roll action: " << _roll_acc << endl;
@@ -92,7 +97,7 @@ void StabilityCompensation::convertion_to_leg_motion(double dt){
 
     // Getting the current position between the leg and its relative leg (roll)
     _model->getPose(_task->getDistalLink(), _comparison_leg_roll, _reference_pose);
-    _const_dist_roll = -(_reference_pose.translation().y());    // extracting the distance along y direction
+    _const_dist_roll = - (_reference_pose.translation().y());    // extracting the distance along y direction
 
     // Getting the current position between the leg and its relative leg (pitch)
     _model->getPose(_task->getDistalLink(), _comparison_leg_pitch, _reference_pose_2);
@@ -101,13 +106,19 @@ void StabilityCompensation::convertion_to_leg_motion(double dt){
     // Resetting the values (not needed but for safety)
     _reference_pose = _reference_pose_2 = Eigen::Affine3d::Identity();
 
-    _delta_z_ddot = _const_dist_roll * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_acc * dt) +
-                    _const_dist_pitch * (- sin(_pitch_angle) * pow(_angular_vel.y(), 2) + cos(_pitch_angle) * _pitch_acc * dt);
+    roll_cmd = roll_dot_cmd * dt + 0.5 * dt * dt * _roll_acc;
+    roll_dot_cmd = _roll_acc * dt;
 
-    _delta_z_dot = _const_dist_roll * cos(_roll_angle) * _roll_acc +
-                   _const_dist_pitch * cos(_pitch_angle) * _pitch_acc;
+    pitch_cmd = pitch_dot_cmd * dt + 0.5 * dt * dt * _pitch_acc;
+    pitch_dot_cmd = _pitch_acc * dt;
 
-    _delta_z = (dt * _delta_z_dot) + (0.5 * pow(dt, 2) * _delta_z_ddot);
+    _delta_z_ddot = _const_dist_roll * (- sin(roll_cmd) * pow(roll_dot_cmd, 2) + cos(roll_cmd) * _roll_acc);
+
+    _delta_z = _const_dist_roll * sin(roll_cmd) * _roll_acc+
+               _const_dist_pitch * sin(pitch_cmd) * _pitch_acc;
+
+    _delta_z_dot = _delta_z_ddot * dt;
+
 
     // ------------ DEBUG ------------
     // cout << "Delta acceleration: " << _delta_z_ddot << endl;
@@ -126,6 +137,7 @@ void StabilityCompensation::convertion_to_leg_motion(double dt){
 
 void StabilityCompensation::update(double time, double period){
 
+    //compute_gain();   // automatically compute dynamic gain in order to control settling time of the step responce w.r.t. the cartesian imp controller
     compute_position_error();
     control_law();
     convertion_to_leg_motion(period);
@@ -212,6 +224,7 @@ void StabilityCompensation::extract_data_from_YAML_file(YAML::const_iterator it)
     _damping_factor_pitch = it->second["Pitch"]["Dampint_fator"].as<double>();
     _max_angle = it->second["Safety_limit"]["max_angle"].as<int>() * M_PI / 180;
     _max_control_action = it->second["Safety_limit"]["max_control_action"].as<double>();
+    _settling_time_factor = it->second["SettlingTime"].as<double>();
 
 }
 
@@ -238,6 +251,22 @@ void StabilityCompensation::print_config_param(){
     cout << "- K_v = " << _K_v_pitch << endl;
     cout << "- ζ = " << _damping_factor_pitch << endl;
     cout << "- Relative leg: " << _comparison_leg_pitch << endl;
+    cout << "Settling time factor: " << _settling_time_factor << endl;
     cout << "=====================================================" << endl;
 
 }
+
+void StabilityCompensation::compute_gain(){
+
+    _K_p_pitch = _K_p_roll = (_task->getImpedance().stiffness(2,2) / _task->getImpedance().mass(2,2)) / pow(_settling_time_factor * 1.66 * _damping_factor_roll, 2);
+
+    _K_v_roll = 2 * _damping_factor_roll * sqrt(_K_p_roll);
+    _K_v_pitch = 2 * _damping_factor_pitch * sqrt(_K_p_pitch);
+
+    cout << _task->getName() << endl;
+    cout << "- K_p = " << _K_p_roll << endl;
+    cout << "- K_v = " << _K_v_roll << endl;
+    cout << "- ζ = " << _damping_factor_roll << endl;
+}
+
+

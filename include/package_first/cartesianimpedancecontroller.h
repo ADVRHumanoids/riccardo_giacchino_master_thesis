@@ -86,6 +86,8 @@ public:
      */
     void set_damping_factor(Eigen::Matrix6d damping_factor);
 
+    Eigen::Matrix6d get_Mass();
+
 private:
 
     // ==============================================================================
@@ -243,7 +245,8 @@ private:
      */
     void print_config_param();
 
-    void vectorEigenToMsg(Eigen::VectorXd vect);
+    void vectorEigenToMsg();
+
 
 
 

@@ -102,6 +102,9 @@ private:
     // Eigen::VectorXd _vel;
     // bool flag = false;
 
+    ImuSensor::ConstPtr _imu;
+    Eigen::Matrix3d _floating_base_orientation;
+
 
     // ==============================================================================
     // Additional Private Functions

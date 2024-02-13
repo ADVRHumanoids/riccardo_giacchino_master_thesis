@@ -42,7 +42,7 @@ bool ControllerManager::on_initialize()
     setDefaultControlMode(_ctrl_map);
 
     // ----------------------------------------------------------------------------- TODO: comments
-    stability_controller_initialization();
+    // stability_controller_initialization();
 
     // Initialize usefull variable
     _torque_cartesian = _torque_contact = _torque = Eigen::VectorXd::Zero(_model->getJointNum());
@@ -66,6 +66,8 @@ bool ControllerManager::on_initialize()
     // opt.default_buffer_size = 1e9;
     // _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat", opt);
     // _imu = _model->getImu("pelvis");
+
+    _imu = _model->getImu("pelvis");
 
     return true;
 
@@ -109,9 +111,15 @@ void ControllerManager::run()
     // Update the reference values for the
     for (auto& pair : _stability_controller){
 
-        _stability_controller[pair.first]->update(_time, _dt);
+        // _stability_controller[pair.first]->update(_time, _dt);
 
     }
+
+    //----------------
+    _imu->getOrientation(_floating_base_orientation);
+    _model->setFloatingBaseOrientation(_floating_base_orientation);
+    _model->update();
+    _robot->sense();
 
     // CartesIO pluing update will compute the torque base on the controller and set them into the model
     _solver->update(_time, _dt);
@@ -140,6 +148,7 @@ void ControllerManager::run()
 
     //
     _ros_wrapper->send();
+
 
     // ============================== LOGGER ==============================
     // _imu->getOrientation(orient);
@@ -285,8 +294,7 @@ void ControllerManager::compute_gravity_compensation(){
 
         wrench[2] = _contact_force_z[i];
 
-        _model->getRelativeJacobian(_tasks_casted[i]->getDistalLink(),
-                                    _tasks_casted[i]->getBaseLink(),
+        _model->getJacobian(_tasks_casted[i]->getDistalLink(),
                                     _J_leg[i]);
 
         _torque_contact.noalias() += _J_leg[i].transpose() * wrench;
@@ -312,6 +320,7 @@ void ControllerManager::control_law(){
     // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
     _torque.noalias() = _torque_cartesian + _torque_contact + _non_linear_torque + _total_Jd_Qd;
 
+    cout << _torque_contact.head(6).transpose() << endl;
     // _logger->add("non_linear_terms", _non_linear_torque);
     // _logger->add("gravity", _gravity_torque);
     // _logger->add("contact", _torque_contact);

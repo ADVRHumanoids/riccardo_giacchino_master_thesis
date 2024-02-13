@@ -94,6 +94,7 @@ private:
 
     double _K_v_roll, _K_p_roll, _damping_factor_roll;
     double _K_v_pitch, _K_p_pitch, _damping_factor_pitch;
+    double _settling_time_factor;
 
     Eigen::Vector3d _rpy;
     double _roll_angle, _roll_acc;
@@ -103,6 +104,8 @@ private:
     double _delta_z_ddot;
     double _delta_z_dot;
     double _delta_z;
+
+    double roll_cmd, pitch_cmd, roll_dot_cmd, pitch_dot_cmd;
 
     // Ros support
     RosSupport::Ptr _ros;
@@ -154,6 +157,8 @@ private:
     void print_IMU_data();
 
     void print_config_param();
+
+    void compute_gain();
 
 
 };

@@ -26,14 +26,17 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
     // Create all controller for each InteractionTask
     for (auto& task_casted : _tasks_casted){
 
-        Impedance imp = task_casted->getImpedance();
+        _imp = task_casted->getImpedance();
 
         _impedance_controller[task_casted] = std::make_unique<CartesianImpedanceController>(_model,  // always updated
-                                                                                  imp.stiffness,
-                                                                                  imp.damping,
+                                                                                  _imp.stiffness,
+                                                                                  _imp.damping,
                                                                                   task_casted->getDistalLink(),
                                                                                   task_casted->getBaseLink(),
                                                                                   task_casted->getName());
+
+        _imp.mass = _impedance_controller[task_casted]->get_Mass();
+        task_casted->setImpedance(_imp);
 
     }
 
@@ -53,12 +56,16 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     for (auto& pair : _impedance_controller){
 
-        pair.first->getImpedance();
+        _imp = pair.first->getImpedance();
         pair.first->getPoseReference(_Tref, &_vel_ref, &_acc_ref);
 
-        _impedance_controller[pair.first]->set_stiffness(pair.first->getImpedance().stiffness);
-        _impedance_controller[pair.first]->set_damping_factor(pair.first->getImpedance().damping);
+        _impedance_controller[pair.first]->set_stiffness(_imp.stiffness);
+        _impedance_controller[pair.first]->set_damping_factor(_imp.damping);
         _impedance_controller[pair.first]->set_reference_value(_Tref, _vel_ref, _acc_ref);
+
+        _imp.mass = _impedance_controller[pair.first]->get_Mass();
+
+        pair.first->setImpedance(_imp);
 
         _effort += _impedance_controller[pair.first]->compute_torque();
 

@@ -21,6 +21,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Inizialize Jacobian and Joint inertia matrix
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
     _model->getInertiaMatrix(_B_inv);
+    update_inertia();
 
     // Inizialize all parameteres to zero
     _x_real = _x_ref = Eigen::Affine3d::Identity();
@@ -175,6 +176,8 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     // --------------- LOGGER ---------------
     tf::wrenchEigenToMsg(_force, _msg.force);
     _stats_publisher->publish(_msg);
+
+    vectorEigenToMsg();
 
 
     // The model works with 46 joints (first 6 of the floating base), while the robot works with 40 joints
@@ -333,7 +336,7 @@ void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_fa
     _D_zeta = damping_factor;
 }
 
-void CartesianImpedanceController::vectorEigenToMsg(Eigen::VectorXd vect){
+void CartesianImpedanceController::vectorEigenToMsg(){
 
     for (int i = 0; i < _torque.size(); i++){
         _msg.torque[i] = _torque(i);
@@ -343,6 +346,9 @@ void CartesianImpedanceController::vectorEigenToMsg(Eigen::VectorXd vect){
         _msg.K_omega[i] = _K_omega.diagonal()(i);
     }
 
+}
 
+Eigen::Matrix6d CartesianImpedanceController::get_Mass(){
+    return _op_sp_inertia;
 }
 
