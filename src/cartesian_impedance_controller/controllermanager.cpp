@@ -320,7 +320,7 @@ void ControllerManager::control_law(){
     // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
     _torque.noalias() = _torque_cartesian + _torque_contact + _non_linear_torque + _total_Jd_Qd;
 
-    cout << _torque_contact.head(6).transpose() << endl;
+    // cout << _torque_contact.head(6).transpose() << endl;
     // _logger->add("non_linear_terms", _non_linear_torque);
     // _logger->add("gravity", _gravity_torque);
     // _logger->add("contact", _torque_contact);

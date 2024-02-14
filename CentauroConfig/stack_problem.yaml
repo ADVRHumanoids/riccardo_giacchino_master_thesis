@@ -51,5 +51,5 @@ JointLimits:
     type: "JointLimits"
 
 VelocityLimits:
-    type: "VelocityLimits"
+    type: "VelocityLimits"  # Refer to velocity limit on the joints only
 

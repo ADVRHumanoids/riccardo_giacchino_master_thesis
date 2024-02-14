@@ -37,10 +37,20 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
 
     print_config_param();
 
+    _task->setAccelerationLimits(200, 20);
+
     // ROS stuff
     _ros = make_unique<RosSupport>(ros::NodeHandle(string("stab_node_" + task->getName())));
     _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::RollPitchController>(string("stab_controller_" + task->getName()), 1);
     _msg.name = task->getDistalLink();
+
+    // Getting the current position between the leg and its relative leg (roll)
+    _model->getPose(_task->getDistalLink(), _comparison_leg_roll, _reference_pose);
+    _const_dist_roll = - (_reference_pose.translation().y());    // extracting the distance along y direction
+
+    // Getting the current position between the leg and its relative leg (pitch)
+    _model->getPose(_task->getDistalLink(), _comparison_leg_pitch, _reference_pose_2);
+    _const_dist_pitch = (_reference_pose_2.translation().x());  // extracting the distance along x direction
 
 }
 
@@ -52,8 +62,6 @@ void StabilityCompensation::compute_position_error(){
 
     _roll_angle = atan2(_orientation_matrix(2, 1), _orientation_matrix(2, 2));
     _pitch_angle = atan2(-_orientation_matrix(2, 0), sqrt(_orientation_matrix(2, 2) * _orientation_matrix(2, 2) + _orientation_matrix(2, 1) * _orientation_matrix(2, 1)));
-
-    _model->setFloatingBaseOrientation(_orientation_matrix);
 
     // ------------ SAFETY FEATURES ------------
     // check_angle();
@@ -79,14 +87,14 @@ void StabilityCompensation::control_law(){
 
     _pitch_acc = - _K_v_pitch * (_angular_vel.y()) - _K_p_pitch * (_pitch_angle);
 
-    // ------------ SAFETY FEATURES ------------
+    // ----------- SAFETY FEATURES -----------
     // check_computed_values();
 
-    // ------------ DEBUG ------------
+    // ---------------- DEBUG ----------------
     // cout << "Roll action: " << _roll_acc << endl;
     // cout << "Pitch action: " << _pitch_acc << endl;
 
-    // ------------ LOGGER ------------
+    // ---------------- LOGGER ----------------
     _msg.commanded_roll_acc = _roll_acc;
     _msg.commanded_pitch_acc = _pitch_acc;
 
@@ -95,29 +103,23 @@ void StabilityCompensation::control_law(){
 
 void StabilityCompensation::convertion_to_leg_motion(double dt){
 
-    // Getting the current position between the leg and its relative leg (roll)
-    _model->getPose(_task->getDistalLink(), _comparison_leg_roll, _reference_pose);
-    _const_dist_roll = - (_reference_pose.translation().y());    // extracting the distance along y direction
 
-    // Getting the current position between the leg and its relative leg (pitch)
-    _model->getPose(_task->getDistalLink(), _comparison_leg_pitch, _reference_pose_2);
-    _const_dist_pitch = (_reference_pose_2.translation().x());  // extracting the distance along x direction
 
     // Resetting the values (not needed but for safety)
     _reference_pose = _reference_pose_2 = Eigen::Affine3d::Identity();
 
-    roll_cmd = roll_dot_cmd * dt + 0.5 * dt * dt * _roll_acc;
-    roll_dot_cmd = _roll_acc * dt;
+    roll_dot_cmd += _roll_acc * dt;
+    roll_cmd += roll_dot_cmd * dt + 0.5 * dt * dt * _roll_acc;
 
-    pitch_cmd = pitch_dot_cmd * dt + 0.5 * dt * dt * _pitch_acc;
-    pitch_dot_cmd = _pitch_acc * dt;
+    pitch_dot_cmd += _pitch_acc * dt;
+    pitch_cmd += pitch_dot_cmd * dt + 0.5 * dt * dt * _pitch_acc;
 
-    _delta_z_ddot = _const_dist_roll * (- sin(roll_cmd) * pow(roll_dot_cmd, 2) + cos(roll_cmd) * _roll_acc);
+    _delta_z_ddot = _const_dist_roll * (- sin(_roll_angle) * pow(_angular_vel.x(), 2) + cos(_roll_angle) * _roll_acc) +
+                    _const_dist_pitch * (- sin(_pitch_angle) * pow(_angular_vel.y(), 2) + cos(_pitch_angle) * _pitch_acc);
 
-    _delta_z = _const_dist_roll * sin(roll_cmd) * _roll_acc+
-               _const_dist_pitch * sin(pitch_cmd) * _pitch_acc;
+    _delta_z_dot += _delta_z_ddot * dt;
 
-    _delta_z_dot = _delta_z_ddot * dt;
+    _delta_z = (dt * _delta_z_dot) + (0.5 * pow(dt, 2) * _delta_z_ddot);
 
 
     // ------------ DEBUG ------------
@@ -131,6 +133,10 @@ void StabilityCompensation::convertion_to_leg_motion(double dt){
     _msg.delta_pos = _delta_z;
     _msg.delta_vel = _delta_z_dot;
     _msg.delta_acc = _delta_z_ddot;
+    _msg.commanded_roll_vel = roll_dot_cmd;
+    _msg.commanded_roll_ang = roll_cmd;
+    _msg.commanded_pitch_vel = pitch_dot_cmd;
+    _msg.commanded_pitch_ang = pitch_cmd;
 
 }
 
@@ -150,21 +156,10 @@ void StabilityCompensation::update(double time, double period){
     tf::twistEigenToMsg(_reference_vel, _msg.old_reference_velocity);
     tf::twistEigenToMsg(_reference_acc, _msg.old_reference_acceleration);
 
-    // This check is redundant
-    if (emergency_stop == false){
-
-        // Update the reference values of the task with computed values
-        _reference_pose.translation().z() += _delta_z/2;
-        _reference_vel(2) = _delta_z_dot;
-        _reference_acc(2) = _delta_z_ddot;
-
-    } else {
-
-        _reference_pose.translation().z() += 0.0;
-        _reference_vel(2) = 0.0;
-        _reference_acc(2) = 0.0;
-
-    }
+    // Update the reference values of the task with computed values
+    _reference_pose.translation().z() += _delta_z/2;
+    _reference_vel(2) = _delta_z_dot;
+    _reference_acc(2) = _delta_z_ddot;
 
     // Set the updated values
     _task->setPoseReference(_reference_pose);
@@ -176,7 +171,7 @@ void StabilityCompensation::update(double time, double period){
     tf::twistEigenToMsg(_reference_vel, _msg.reference_velocity);
     tf::twistEigenToMsg(_reference_acc, _msg.reference_acceleration);
 
-    _stats_publisher->publish(_msg);
+    _stats_publisher->publish(_msg);    // publish the message
 
 }
 
@@ -218,8 +213,8 @@ void StabilityCompensation::extract_data_from_YAML_file(YAML::const_iterator it)
 
     _comparison_leg_roll = it->second["Roll"]["relative_leg"].as<std::string>();
     _comparison_leg_pitch = it->second["Pitch"]["relative_leg"].as<std::string>();
-    _K_p_roll = it->second["Roll"]["Gain"].as<int>();
-    _K_p_pitch = it->second["Pitch"]["Gain"].as<int>();
+    _K_p_roll = it->second["Roll"]["Gain"].as<double>();
+    _K_p_pitch = it->second["Pitch"]["Gain"].as<double>();
     _damping_factor_roll = it->second["Roll"]["Dampint_fator"].as<double>();
     _damping_factor_pitch = it->second["Pitch"]["Dampint_fator"].as<double>();
     _max_angle = it->second["Safety_limit"]["max_angle"].as<int>() * M_PI / 180;
@@ -257,6 +252,8 @@ void StabilityCompensation::print_config_param(){
 }
 
 void StabilityCompensation::compute_gain(){
+
+    cout << "Ti sto usando per cose losche" << endl;
 
     _K_p_pitch = _K_p_roll = (_task->getImpedance().stiffness(2,2) / _task->getImpedance().mass(2,2)) / pow(_settling_time_factor * 1.66 * _damping_factor_roll, 2);
 

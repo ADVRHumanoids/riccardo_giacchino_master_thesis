@@ -1,12 +1,55 @@
+# defaults: &defaults
+#   Roll:
+#     &gain_gain  Gain: 200
+#     relative_leg: contact_2
+#     &damp_damping Damping_Factor: 0
+#   Pitch:
+#     <<: *defaults
+#   Safety_limit:
+#     max_angle: 20 #deg
+#     max_control_action: 4.0
+#   SettlingTime: 10
+
+# Leg1:
+#   Roll:
+#     <<: *defaults
+#   Pitch:
+#     <<: *defaults
+
+# Leg2:
+#   Roll:
+#     <<: *defaults
+#     relative_leg: contact_1
+#   Pitch:
+#     <<: *defaults
+#     relative_leg: contact_4
+
+# Leg3:
+#   Roll:
+#     <<: *defaults
+#     relative_leg: contact_4
+#   Pitch:
+#     <<: *defaults
+#     relative_leg: contact_1
+
+# Leg4:
+#   Roll:
+#     <<: *defaults
+#     relative_leg: contact_3
+#   Pitch:
+#     <<: *defaults
+#     relative_leg: contact_2
+
+
 Leg1:
   Roll:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_2
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Pitch:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_3
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0
@@ -14,13 +57,13 @@ Leg1:
 
 Leg2:
   Roll:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_1
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Pitch:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_4
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0
@@ -28,13 +71,13 @@ Leg2:
 
 Leg3:
   Roll:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_4
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Pitch:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_1
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0
@@ -42,13 +85,13 @@ Leg3:
 
 Leg4:
   Roll:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_3
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Pitch:
-    Gain: 4
+    Gain: 0.1
     relative_leg: contact_2
-    Dampint_fator: 0.5
+    Dampint_fator: 1
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0
