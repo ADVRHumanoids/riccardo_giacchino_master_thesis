@@ -339,8 +339,9 @@ void ControllerManager::stability_controller_initialization(){
         // Create StabilityController with the read parameters
         _stability_controller[_tasks_casted[i]] = std::make_unique<StabilityCompensation>(_model,
                                                                                           _tasks_casted[i],
+                                                                                          _tasks_casted[i+1],
                                                                                           it);
-        i++;
+        i = i + 2;
     }
 
 }

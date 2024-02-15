@@ -53,8 +53,9 @@ public:
      * @param K_p The proportional gain for the control law.
      */
     StabilityCompensation(ModelInterface::Ptr model,
-                          std::shared_ptr<Cartesian::InteractionTask> task,
-                          YAML::const_iterator yaml_it);
+                          std::shared_ptr<Cartesian::InteractionTask> task1,
+                          std::shared_ptr<Cartesian::InteractionTask> task2,
+                          YAML::const_iterator it);
 
     // ==============================================================================
     // Additional Functions
@@ -76,9 +77,10 @@ private:
 
     ModelInterface::Ptr _model;
 
-    std::shared_ptr<Cartesian::InteractionTask> _task;
+    std::shared_ptr<Cartesian::InteractionTask> _task1;
+    std::shared_ptr<Cartesian::InteractionTask> _task2;
 
-    string _comparison_leg_roll, _comparison_leg_pitch;
+    string _comparison_leg_roll_1, _comparison_leg_roll_2;
 
     ImuSensor::ConstPtr _imu;
 
@@ -88,18 +90,18 @@ private:
 
     Eigen::Affine3d _leg_pose, _leg_pose_2;
     Eigen::Affine3d _relative_leg_pose, _relative_leg_pose_2;
-    Eigen::Affine3d _reference_pose, _reference_pose_2;
+    Eigen::Affine3d _reference_pose1, _reference_pose2;
 
-    Eigen::Vector6d _reference_vel, _reference_acc;
+    Eigen::Vector6d _reference_vel1, _reference_acc1;
+    Eigen::Vector6d _reference_vel2, _reference_acc2;
 
     double _K_v_roll, _K_p_roll, _damping_factor_roll;
     double _K_v_pitch, _K_p_pitch, _damping_factor_pitch;
     double _settling_time_factor;
 
-    Eigen::Vector3d _rpy;
     double _roll_angle, _roll_acc;
     double _pitch_angle, _pitch_acc;
-    double _const_dist_roll, _const_dist_pitch;
+    double _const_dist_roll_1, _const_dist_roll_2;
 
     double _delta_z_ddot;
     double _delta_z_dot;
@@ -109,8 +111,11 @@ private:
 
     // Ros support
     RosSupport::Ptr _ros;
-    riccardo_giacchino_master_thesis::RollPitchController _msg;
-    PublisherPtr<riccardo_giacchino_master_thesis::RollPitchController> _stats_publisher;
+    riccardo_giacchino_master_thesis::RollPitchController _msg1;
+    riccardo_giacchino_master_thesis::RollPitchController _msg2;
+    PublisherPtr<riccardo_giacchino_master_thesis::RollPitchController> _stats_publisher1;
+    PublisherPtr<riccardo_giacchino_master_thesis::RollPitchController> _stats_publisher2;
+
 
     // ==============================================================================
     // Additional Private Functions
