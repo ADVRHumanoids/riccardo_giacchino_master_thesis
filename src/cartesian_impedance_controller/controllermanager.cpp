@@ -42,7 +42,7 @@ bool ControllerManager::on_initialize()
     setDefaultControlMode(_ctrl_map);
 
     // ----------------------------------------------------------------------------- TODO: comments
-    // stability_controller_initialization();
+    stability_controller_initialization();
 
     // Initialize usefull variable
     _torque_cartesian = _torque_contact = _torque = Eigen::VectorXd::Zero(_model->getJointNum());
@@ -66,6 +66,9 @@ bool ControllerManager::on_initialize()
     // opt.default_buffer_size = 1e9;
     // _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat", opt);
     // _imu = _model->getImu("pelvis");
+
+    // _ros = make_unique<RosSupport>(ros::NodeHandle("Controller_manager"));
+    // _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::Custom_torque>("controller_manager", 1);
 
     _imu = _model->getImu("pelvis");
 
@@ -111,7 +114,7 @@ void ControllerManager::run()
     // Update the reference values for the
     for (auto& pair : _stability_controller){
 
-        // _stability_controller[pair.first]->update(_time, _dt);
+        _stability_controller[pair.first]->update(_time, _dt);
 
     }
 

@@ -1,55 +1,72 @@
-# defaults: &defaults
+# definitions:
+#  - &controller_gain     0.8
+#  - &damping_factor 	0.2
+
+# Leg1:
 #   Roll:
-#     &gain_gain  Gain: 200
+#     gain: *controller_gain
 #     relative_leg: contact_2
-#     &damp_damping Damping_Factor: 0
+#     damping_factor: *damping_factor
 #   Pitch:
-#     <<: *defaults
+#     gain: *controller_gain
+#     relative_leg: contact_3
+#     damping_factor: *damping_factor
 #   Safety_limit:
 #     max_angle: 20 #deg
 #     max_control_action: 4.0
 #   SettlingTime: 10
 
-# Leg1:
-#   Roll:
-#     <<: *defaults
-#   Pitch:
-#     <<: *defaults
-
 # Leg2:
 #   Roll:
-#     <<: *defaults
+#     gain: *controller_gain
 #     relative_leg: contact_1
+#     damping_factor: *damping_factor
 #   Pitch:
-#     <<: *defaults
+#     gain: *controller_gain
 #     relative_leg: contact_4
+#     damping_factor: *damping_factor
+#   Safety_limit:
+#     max_angle: 20 #deg
+#     max_control_action: 4.0
+#   SettlingTime: 10
 
 # Leg3:
 #   Roll:
-#     <<: *defaults
+#     gain: *controller_gain
 #     relative_leg: contact_4
+#     damping_factor: *damping_factor
 #   Pitch:
-#     <<: *defaults
+#     gain: *controller_gain
 #     relative_leg: contact_1
+#     damping_factor: *damping_factor
+#   Safety_limit:
+#     max_angle: 20 #deg
+#     max_control_action: 4.0
+#   SettlingTime: 10
 
 # Leg4:
 #   Roll:
-#     <<: *defaults
+#     gain: *controller_gain
 #     relative_leg: contact_3
+#     damping_factor: *damping_factor
 #   Pitch:
-#     <<: *defaults
+#     gain: *controller_gain
 #     relative_leg: contact_2
-
+#     damping_factor: *damping_factor
+#   Safety_limit:
+#     max_angle: 20 #deg
+#     max_control_action: 4.0
+#   SettlingTime: 10
 
 Leg1:
   Roll:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_2
-    Dampint_fator: 1
+    damping_factor: 0.7
   Pitch:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_3
-    Dampint_fator: 1
+    damping_factor: 0.7
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0
@@ -57,13 +74,13 @@ Leg1:
 
 Leg2:
   Roll:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_1
-    Dampint_fator: 1
+    damping_factor: 0.7
   Pitch:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_4
-    Dampint_fator: 1
+    damping_factor: 0.7
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0
@@ -71,13 +88,13 @@ Leg2:
 
 Leg3:
   Roll:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_4
-    Dampint_fator: 1
+    damping_factor: 0.7
   Pitch:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_1
-    Dampint_fator: 1
+    damping_factor: 0.7
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0
@@ -85,13 +102,13 @@ Leg3:
 
 Leg4:
   Roll:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_3
-    Dampint_fator: 1
+    damping_factor: 0.7
   Pitch:
-    Gain: 0.1
+    gain: 3
     relative_leg: contact_2
-    Dampint_fator: 1
+    damping_factor: 0.7
   Safety_limit:
     max_angle: 20 #deg
     max_control_action: 4.0

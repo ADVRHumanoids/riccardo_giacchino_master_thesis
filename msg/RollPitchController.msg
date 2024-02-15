@@ -27,4 +27,4 @@ geometry_msgs/Pose reference_position
 geometry_msgs/Twist reference_velocity
 geometry_msgs/Twist reference_acceleration
 
-
+std_msgs/Float64MultiArray inertia_op

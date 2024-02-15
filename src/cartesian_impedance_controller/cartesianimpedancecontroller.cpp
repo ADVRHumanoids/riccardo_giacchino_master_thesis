@@ -58,9 +58,8 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     print_config_param();
 
     // ROS stuff
-    _ros = make_unique<RosSupport>(ros::NodeHandle(string("cartesian_controller_node_" + _task_name)));
-
-    _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::CartesianController>(string("cart_controller_" + _task_name), 1);
+    _ros = make_unique<RosSupport>(ros::NodeHandle(_task_name));
+    _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::CartesianController>(string("cartesian_controller"), 1);
     _msg.name = _end_effector_link;
 
 }
@@ -175,14 +174,10 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 
     // --------------- LOGGER ---------------
     tf::wrenchEigenToMsg(_force, _msg.force);
-    _stats_publisher->publish(_msg);
 
     vectorEigenToMsg();
 
-
-    // The model works with 46 joints (first 6 of the floating base), while the robot works with 40 joints
-    // (exclude the floating base joints). If working with RobotInterface then return _torque.tail(40), otherwise
-    // return all the vector _torque
+    _stats_publisher->publish(_msg);
 
     return _torque;
 }

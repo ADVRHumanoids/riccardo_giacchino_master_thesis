@@ -10,6 +10,8 @@
 #include <stability_compensation.h>
 #include <urdf_model/model.h>
 
+#include <riccardo_giacchino_master_thesis/Custom_torque.h>
+
 #include "../../src/cartesian_impedance_controller/cartesio_ros_wrapper.h"
 
 // ==============================================================================
@@ -104,6 +106,10 @@ private:
 
     ImuSensor::ConstPtr _imu;
     Eigen::Matrix3d _floating_base_orientation;
+
+    RosSupport::Ptr _ros;
+    riccardo_giacchino_master_thesis::Custom_torque _msg;
+    PublisherPtr<riccardo_giacchino_master_thesis::Custom_torque> _stats_publisher;
 
 
     // ==============================================================================

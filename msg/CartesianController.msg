@@ -15,3 +15,5 @@ geometry_msgs/Wrench force
 float64[46] torque
 
 float64[6] K_omega
+
+float64[6] inertia_op

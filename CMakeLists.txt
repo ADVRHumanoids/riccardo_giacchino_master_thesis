@@ -18,6 +18,7 @@ add_message_files(
     FILES
     RollPitchController.msg
     CartesianController.msg
+    Custom_torque.msg
 )
 
 generate_messages(
@@ -58,6 +59,8 @@ if(${xbot2_FOUND})
 
     add_xbot2_plugin(controllermanager
         src/cartesian_impedance_controller/controllermanager.cpp)
+
+    add_dependencies(controllermanager ${PROJECT_NAME}_generate_messages)
 
     target_link_libraries(controllermanager
         PRIVATE
