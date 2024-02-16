@@ -37,8 +37,6 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
 
     print_config_param();
 
-    _task->setAccelerationLimits(200, 20);
-
     // ROS stuff
     _ros = make_unique<RosSupport>(ros::NodeHandle(task->getName()));
     _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::RollPitchController>(string("stability_controller"), 1);
@@ -162,8 +160,8 @@ void StabilityCompensation::update(double time, double period){
 
     // Set the updated values
     _task->setPoseReference(_reference_pose);
-    // _task->setVelocityReference(_reference_vel);
-    // _task->setAccelerationReference(_reference_acc);
+    _task->setVelocityReference(_reference_vel);
+    _task->setAccelerationReference(_reference_acc);
 
     // ------------ LOGGER ------------
     tf::poseEigenToMsg(_reference_pose, _msg.reference_position);

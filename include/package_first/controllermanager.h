@@ -142,6 +142,8 @@ private:
 
     void stability_controller_initialization();
 
+    void vectorEigenToMsg();
+
 };
 
 #endif // CONTROLLERMANAGER_H

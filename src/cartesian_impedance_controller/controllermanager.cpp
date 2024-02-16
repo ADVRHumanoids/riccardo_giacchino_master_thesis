@@ -67,8 +67,8 @@ bool ControllerManager::on_initialize()
     // _logger = XBot::MatLogger2::MakeLogger("/home/riccardo/Documents/MATLAB/logger.mat", opt);
     // _imu = _model->getImu("pelvis");
 
-    // _ros = make_unique<RosSupport>(ros::NodeHandle("Controller_manager"));
-    // _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::Custom_torque>("controller_manager", 1);
+    _ros = make_unique<RosSupport>(ros::NodeHandle("Controller_manager"));
+    _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::Custom_torque>("controller_manager", 1);
 
     _imu = _model->getImu("pelvis");
 
@@ -149,9 +149,10 @@ void ControllerManager::run()
 
     _robot->move();
 
+    _stats_publisher->publish(_msg);
+
     //
     _ros_wrapper->send();
-
 
     // ============================== LOGGER ==============================
     // _imu->getOrientation(orient);
@@ -297,6 +298,9 @@ void ControllerManager::compute_gravity_compensation(){
 
         wrench[2] = _contact_force_z[i];
 
+        // ------------- LOGGER -------------
+        _msg.contact_forces[i] = _contact_force_z[i];
+
         _model->getJacobian(_tasks_casted[i]->getDistalLink(),
                                     _J_leg[i]);
 
@@ -328,6 +332,9 @@ void ControllerManager::control_law(){
     // _logger->add("gravity", _gravity_torque);
     // _logger->add("contact", _torque_contact);
 
+    // ------------- LOGGER -------------
+    vectorEigenToMsg();
+
 }
 
 void ControllerManager::stability_controller_initialization(){
@@ -341,6 +348,19 @@ void ControllerManager::stability_controller_initialization(){
                                                                                           _tasks_casted[i],
                                                                                           it);
         i++;
+    }
+
+}
+
+void ControllerManager::vectorEigenToMsg(){
+
+    for (int i = 0; i < _model->getJointNum(); i++){
+
+        _msg.J_dot_q_dot[i] = _total_Jd_Qd[i];
+        _msg.non_linear_torque[i] = _non_linear_torque[i];
+        _msg.contact_torque[i] = _torque_contact[i];
+        _msg.torque[i] = _torque[i];
+
     }
 
 }

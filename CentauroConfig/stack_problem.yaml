@@ -12,7 +12,7 @@ Leg1:
     distal_link: contact_1
     base_link: base_link
     orientation_gain: 2.0
-    stiffness: [10000.0, 10000.0, 1200.0, 500.0, 500.0, 0.0]
+    stiffness: [10000.0, 10000.0, 5000.0, 500.0, 500.0, 0.0]
     damping: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 Leg2:
@@ -22,7 +22,7 @@ Leg2:
     distal_link: contact_2
     base_link: base_link
     orientation_gain: 2.0
-    stiffness: [10000.0, 10000.0, 1200.0, 500.0, 500.0, 0.0]
+    stiffness: [10000.0, 10000.0, 5000.0, 500.0, 500.0, 0.0]
     damping: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 Leg3:
@@ -32,7 +32,7 @@ Leg3:
     distal_link: contact_3
     base_link: base_link
     orientation_gain: 2.0
-    stiffness: [10000.0, 10000.0, 1200.0, 500.0, 500.0, 0.0]
+    stiffness: [10000.0, 10000.0, 5000.0, 500.0, 500.0, 0.0]
     damping: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 Leg4:
@@ -42,7 +42,7 @@ Leg4:
     distal_link: contact_4
     base_link: base_link
     orientation_gain: 2.0
-    stiffness: [10000.0, 10000.0, 1200.0, 500.0, 500.0, 0.0]
+    stiffness: [10000.0, 10000.0, 5000.0, 500.0, 500.0, 0.0]
     damping: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 ## ------ Constraint Task ------ ##
