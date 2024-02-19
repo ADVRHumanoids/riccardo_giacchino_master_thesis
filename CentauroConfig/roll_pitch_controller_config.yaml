@@ -1,6 +1,6 @@
 # definitions:
 #  - &controller_gain     0.8
-#  - &damping_factor 	0.2
+#  - &damping_factor 	2
 
 # Leg1:
 #   Roll:
@@ -60,11 +60,11 @@
 
 Leg1:
   Roll:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_2
     damping_factor: 0.7
   Pitch:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_3
     damping_factor: 0.7
   Safety_limit:
@@ -74,11 +74,11 @@ Leg1:
 
 Leg2:
   Roll:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_1
     damping_factor: 0.7
   Pitch:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_4
     damping_factor: 0.7
   Safety_limit:
@@ -88,11 +88,11 @@ Leg2:
 
 Leg3:
   Roll:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_4
     damping_factor: 0.7
   Pitch:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_1
     damping_factor: 0.7
   Safety_limit:
@@ -102,11 +102,11 @@ Leg3:
 
 Leg4:
   Roll:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_3
     damping_factor: 0.7
   Pitch:
-    gain: 2.5
+    gain: 2
     relative_leg: contact_2
     damping_factor: 0.7
   Safety_limit:

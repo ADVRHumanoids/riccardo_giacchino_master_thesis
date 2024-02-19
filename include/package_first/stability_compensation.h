@@ -31,7 +31,8 @@ using namespace std;
 /**
  * @brief The StabilityCompensation class provides functionality for stability compensation in a robotic system.
  *
- * This class is designed to compute and apply stability compensation based on IMU data like angle of the base and angular velocity.
+ * This class is designed to control the Pitch and Roll angle of the robot based on the IMU information. Will be generated
+ * the references (position, velocity, acceleration) for the Cartesian Impedance controller.
  */
 class StabilityCompensation
 {
@@ -48,9 +49,7 @@ public:
      * @param model A pointer to the robot model interface.
      * @param task A shared pointer to the Cartesian interaction task (already casted into Interaction task) The following code will
      *             change the reference position of such task
-     * @param relative_leg The name of the link to identify the leg with respect to is computed the angle (See README file for more details).
-     * @param K_v The velocity gain for the control law.
-     * @param K_p The proportional gain for the control law.
+     * @param yaml_it is the iterator for the YAML file where all the configuration parametes for the controller are detalied
      */
     StabilityCompensation(ModelInterface::Ptr model,
                           std::shared_ptr<Cartesian::InteractionTask> task,
