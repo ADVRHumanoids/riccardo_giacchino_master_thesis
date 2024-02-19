@@ -1,0 +1,59 @@
+<launch>
+
+    <arg name="use_momentum_based" default="false"/>
+    <arg name="xbotcore" default="false"/>
+
+    <node pkg="cartesian_interface"
+          type="force_estimation_node"
+          name="force_estimator"
+          output="screen">
+
+
+        <param name="is_model_floating_base" value="true"/>
+        <param name="model_type" value="RBDL"/>
+
+        <param name="links" type="yaml" value="[arm1_8, arm2_8, contact_1, contact_2, contact_3, contact_4]"/>
+        <param name="chains" type="yaml" value="[left_arm, right_arm, front_left_leg, front_right_leg, rear_right_leg, rear_left_leg]"/>
+
+        <param name="arm1_8/dofs" type="yaml" value="[0, 1, 2]"/>
+        <param name="arm2_8/dofs" type="yaml" value="[0, 1, 2]"/>
+                <param name="contact_1/dofs" type="yaml" value="[0, 1, 2]"/>
+        <param name="contact_2/dofs" type="yaml" value="[0, 1, 2]"/>
+                <param name="contact_3/dofs" type="yaml" value="[0, 1, 2]"/>
+        <param name="contact_4/dofs" type="yaml" value="[0, 1, 2]"/>
+
+        <param name="rate" value="200.0"/>
+        <param name="use_momentum_based" value="$(arg use_momentum_based)"/>
+
+        <remap if="$(arg xbotcore)" from="/robot_description" to="/xbotcore/robot_description"/>
+        <remap if="$(arg xbotcore)" from="/robot_description_semantic" to="/xbotcore/robot_description_semantic"/>
+
+    </node>
+
+    <!-- Joystic teleop nodes -->
+
+    <!-- Add joy_node -->
+    <node name="joy_node"
+          pkg="joy"
+          type="joy_node"
+          output="screen">
+
+        <param name="autorepeat_rate" type="int" value="100"/>
+
+    </node>
+
+    <!-- Add teleop_twist_joy node -->
+    <node name="teleop_twist_joy"
+          pkg="teleop_twist_joy"
+          type="teleop_node"
+          output="screen">
+
+        <param name="enable_button" type="int" value="5"/>
+        <param name="scale_linear" type="double" value="2"/>
+
+        <remap from="/cmd_vel" to="/omnisteering/cmd_vel"/>
+
+    </node>
+
+
+</launch>
