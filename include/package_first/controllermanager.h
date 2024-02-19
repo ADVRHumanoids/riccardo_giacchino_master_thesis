@@ -48,6 +48,8 @@ private:
 
     std::map<std::string, ControlMode> _ctrl_map;   // map for the set the Control mode for each joint
 
+    int stab_controller_enable;
+
     double _zero = 0.0; // it is the value at which we want to set the stiffness
                         // and damping to deactivate the joint impedance controller.
                         // If 0.0 the joint impedance controller is disabled, usually that's what we want, that is why is by default

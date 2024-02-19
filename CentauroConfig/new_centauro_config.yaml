@@ -70,6 +70,7 @@ xbotcore_plugins:
       params:
         stack_path: ${PWD}/stack_problem.yaml
         stab_controller_path: ${PWD}/roll_pitch_controller_config.yaml
+        stab_control_enable: 0
         
     
     ec_ros: {thread: nrt_main, type: ec_ros}

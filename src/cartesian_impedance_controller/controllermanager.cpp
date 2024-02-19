@@ -18,6 +18,8 @@ bool ControllerManager::on_initialize()
     // Take the path to the problem definition file
     _config_parameters_stab_controller = YAML::LoadFile(getParamOrThrow<string>("~stab_controller_path"));
 
+    stab_controller_enable = getParamOrThrow<int>("~stab_control_enable");
+
     _ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<Parameters>(_dt),
                                      _model);
 
@@ -42,7 +44,9 @@ bool ControllerManager::on_initialize()
     setDefaultControlMode(_ctrl_map);
 
     // ----------------------------------------------------------------------------- TODO: comments
-    stability_controller_initialization();
+    if(stab_controller_enable == true){
+        stability_controller_initialization();
+    }
 
     // Initialize usefull variable
     _torque_cartesian = _torque_contact = _torque = Eigen::VectorXd::Zero(_model->getJointNum());
@@ -112,10 +116,13 @@ void ControllerManager::run()
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
 
     // Update the reference values for the
-    for (auto& pair : _stability_controller){
+    if (stab_controller_enable == true){
 
-        _stability_controller[pair.first]->update(_time, _dt);
+        for (auto& pair : _stability_controller){
 
+            _stability_controller[pair.first]->update(_time, _dt);
+
+        }
     }
 
     //----------------
