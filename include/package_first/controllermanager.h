@@ -81,10 +81,10 @@ private:
 
     // Gravity compensation variables
     Eigen::VectorXd _gravity_torque;
-    Eigen::Vector3d _g;
+    Eigen::VectorXd _g;
     vector<Eigen::MatrixXd> _J_c;
     Eigen::MatrixXd _J_cz, _J_cz_pseudo_inverse;
-    Eigen::VectorXd _contact_force_z; // 4 x 1
+    Eigen::VectorXd _contact_force_z; // 24 x 1
 
     // Computing JdotQdot and the non-linear terms
     Eigen::Vector6d _J_dot_Q_dot;

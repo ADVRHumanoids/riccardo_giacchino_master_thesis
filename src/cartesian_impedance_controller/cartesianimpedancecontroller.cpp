@@ -21,7 +21,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Inizialize Jacobian and Joint inertia matrix
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
     _model->getInertiaMatrix(_B_inv);
-    update_inertia();
+    // update_inertia();
 
     // Inizialize all parameteres to zero
     _x_real = _x_ref = Eigen::Affine3d::Identity();
@@ -57,7 +57,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     //Print of configuration parameters
     print_config_param();
 
-    // ROS stuff
+    // Initialization of the ROS node for log purpose
     _ros = make_unique<RosSupport>(ros::NodeHandle(_task_name));
     _stats_publisher = _ros->advertise<riccardo_giacchino_master_thesis::CartesianController>(string("cartesian_controller"), 1);
     _msg.name = _end_effector_link;
@@ -71,7 +71,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 void CartesianImpedanceController::update_inertia()
 {
 
-    // Update Jacobian and Joint inertia since they are configuration dependant
+    // Update Jacobian and Joint inertia matrix since they are configuration dependant
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
     _model->getInertiaMatrix(_B_inv);
 
@@ -80,12 +80,12 @@ void CartesianImpedanceController::update_inertia()
 
     /* Make a controller on the legs will cause a singularity in the Jacobian (no joint on the wheel),
      * resulting in a non invertible task space inertia matrix. A possible solution is to
-     * invert the matrix using the inverse of the SVD decomposition (that since Λ is symmetric
-     * is equal to a spectral theorem UVU^T), quick and dirty method
+     * invert the matrix using the inverse of the SVD decomposition (since Λ is symmetric
+     * is equal to a spectral theorem UVU^T), quick and dirty method.
     */
     _op_sp_inertia.noalias() = svd_inverse(_op_sp_inertia);
 
-    // NOTE: Debug print
+    // --------------- DEBUG ---------------
     //cout << "Lambda:\n" << _op_sp_inertia << endl;
 
     Q_computation(_K, _op_sp_inertia);  // will automatically store the resulting matrix in the variable _Q;
@@ -96,9 +96,11 @@ void CartesianImpedanceController::update_D()
 
     // Refer to documentation for the formula
     _D.noalias() = 2 * _Q * _D_zeta * matrix_sqrt(_K_omega) * _Q.transpose();
+
+    // --------------- DEBUG ---------------
     // cout << string(_end_effector_link + "\n")  << _K_omega << endl << _Q.transpose() << endl;
 
-    isPositiveDefinite(_D);
+    isPositiveDefinite(_D); // checks if the matrix is positive definite
 
 }
 
@@ -142,6 +144,7 @@ void CartesianImpedanceController::compute_error()
 
 Eigen::Vector3d CartesianImpedanceController::orientation_error(){
 
+    // Check documentation for formula
     _rotational_error.noalias() = _x_ref.rotation() * _x_real.rotation().transpose();
 
     Eigen::AngleAxisd angleAxis(_rotational_error);
@@ -156,27 +159,32 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 {
 
     update_inertia();
+
     update_D();
+
     update_real_value();
+
     compute_error();
 
     // Reset to zero each cycle
     _force = Eigen::Vector6d::Zero(6);
     _torque = Eigen::VectorXd::Zero(46);
 
+    // Cartesian controller law equation
     _force.noalias() = (_op_sp_inertia * _xddot_ref) + (_D * _edot) + (_K * _e);
 
+    // τ = J^T * F
     _torque.noalias() = _J.transpose() * _force;
 
-    //Debug print
+    // --------------- DEBUG ---------------
     //cout << torque.transpose() << endl;
     //cout << "Force:\n" << _force << endl;
 
     // --------------- LOGGER ---------------
     tf::wrenchEigenToMsg(_force, _msg.force);
-
     vectorEigenToMsg();
 
+    // Publish the message on the topic
     _stats_publisher->publish(_msg);
 
     return _torque;
@@ -194,9 +202,11 @@ Eigen::Matrix6d CartesianImpedanceController::matrix_sqrt(Eigen::Matrix6d matrix
 
 void CartesianImpedanceController::isPositiveDefinite(const Eigen::Matrix6d& matrix) {
 
+    // Compute eigenvalues
     _eigen_solver.compute(matrix);
     _eigenvalues = _eigen_solver.eigenvalues();
 
+    // Check if there are any eigenvalues lower than zero
     if (_eigenvalues.minCoeff() > 0){
         //cout << "Is positive definite:\n" << matrix << endl;
     }
@@ -239,7 +249,7 @@ Eigen::Matrix6d CartesianImpedanceController::Q_computation(const Eigen::Matrix6
     _K_omega = _eigen_solver.eigenvalues().asDiagonal();
     _Q.noalias() = _Phi.inverse().transpose();
 
-    // Debug print
+    // --------------- DEBUG ---------------
     //cout << "Q:\n" << _Q << endl;
     //cout << "K_omega:\n" << _K_omega << endl;
     //cout << "K computed:\n" << _Q * _K_omega * _Q.transpose()<< endl;
@@ -259,7 +269,7 @@ Eigen::Matrix6d CartesianImpedanceController::svd_inverse(Eigen::Matrix6d matrix
     _V = _svd.matrixV(); // Right singular vectors
     _S = _svd.singularValues(); // Singular values matrix
 
-    // Debug print
+    // --------------- DEBUG ---------------
     //cout << "Singular values original:\n" << _S.transpose() << endl;
     //cout << "U:\n" << _U << endl;
     //cout << "V:\n" << _V << endl;
@@ -279,7 +289,7 @@ Eigen::Matrix6d CartesianImpedanceController::svd_inverse(Eigen::Matrix6d matrix
     }
 
     // Λ^† = (V * S^† * U^T) = (U * S^† * U^T) since Λ is symmetric
-    return _U * _S_pseudo_inverse.asDiagonal() * _U.transpose();    // as said from
+    return _U * _S_pseudo_inverse.asDiagonal() * _U.transpose();
 }
 
 double CartesianImpedanceController::f(double x){
@@ -308,6 +318,18 @@ void CartesianImpedanceController::print_config_param(){
 
 }
 
+void CartesianImpedanceController::vectorEigenToMsg(){
+
+    for (int i = 0; i < _torque.size(); i++){
+        _msg.torque[i] = _torque(i);
+    }
+
+    for (int i = 0; i < _K_omega.diagonalSize(); i++){
+        _msg.K_omega[i] = _K_omega.diagonal()(i);
+    }
+
+}
+
 // ==============================================================================
 // Setter and Getter
 // ==============================================================================
@@ -324,26 +346,21 @@ void CartesianImpedanceController::set_reference_value(Eigen::Affine3d Tref, Eig
 }
 
 void CartesianImpedanceController::set_stiffness(Eigen::Matrix6d stiffness){
+
     _K = stiffness;
+
 }
 
 void CartesianImpedanceController::set_damping_factor(Eigen::Matrix6d damping_factor){
+
     _D_zeta = damping_factor;
-}
-
-void CartesianImpedanceController::vectorEigenToMsg(){
-
-    for (int i = 0; i < _torque.size(); i++){
-        _msg.torque[i] = _torque(i);
-    }
-
-    for (int i = 0; i < _K_omega.diagonalSize(); i++){
-        _msg.K_omega[i] = _K_omega.diagonal()(i);
-    }
 
 }
+
 
 Eigen::Matrix6d CartesianImpedanceController::get_Mass(){
+
     return _op_sp_inertia;
+
 }
 

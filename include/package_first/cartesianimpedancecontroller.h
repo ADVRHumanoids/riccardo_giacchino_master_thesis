@@ -86,6 +86,10 @@ public:
      */
     void set_damping_factor(Eigen::Matrix6d damping_factor);
 
+    /**
+     * @brief get_Mass
+     * @return return the operational space inertia matrix Λ, with is a 6 x 6 matrix
+     */
     Eigen::Matrix6d get_Mass();
 
 private:
@@ -96,25 +100,25 @@ private:
 
     string _root_link = "base_link";    // name of the root link, base_link by default
     string _end_effector_link = ""; // name of the end effector link, empty string by default
-    string _task_name = "";
+    string _task_name = ""; // name of the task of CartesIO, empty by default
 
     XBot::ModelInterface::Ptr _model;
 
-    // Reference velocity, position of the end-effector w.r.t. to the root link.
+    // Referenc and real position of the end-effector w.r.t. the root link.
     Eigen::Affine3d _x_ref, _x_real;
 
-    // Real velocity, position of the end-effector w.r.t. to the root link
+    // Reference and real velocity of the end-effector w.r.t. the root link
     Eigen::Vector6d _xdot_ref, _xdot_real;
 
+    // Reference acceleratioin of the end-effector w.r.t. the root link
     Eigen::Vector6d _xddot_ref;
 
     // Error variables
     Eigen::Vector6d _edot, _e;
 
     // Cartesian Controller
-    Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the elementary stiffness and damping of the Cartesian axis
-    Eigen::Matrix6d _K, _D; // computed stiffness and damping matrix
-    double _zeta;   //ζ -> 0 for undamped behavoir and 1 for critically damped behavior
+    Eigen::Matrix6d _K_omega, _D_zeta;   // diagonal matrix that represent the natural frequency and damping ratio
+    Eigen::Matrix6d _K, _D; // stiffness matrix obtained from the task description and damping matrix computed in the code
 
     // Generic Matrix
     Eigen::Matrix6d _op_sp_inertia; // operational space inertial matrix, usually referred to as Λ
@@ -245,6 +249,9 @@ private:
      */
     void print_config_param();
 
+    /**
+     * @brief vectorEigenToMsg will convert the Eigen vector in a Float64[] vector defined in the custom .msg file
+     */
     void vectorEigenToMsg();
 
 

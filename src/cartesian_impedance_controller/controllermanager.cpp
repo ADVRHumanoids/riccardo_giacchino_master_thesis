@@ -56,11 +56,12 @@ bool ControllerManager::on_initialize()
 
     // Initialize the gravity compensation term
     _gravity_torque = Eigen::VectorXd::Zero(_model->getJointNum());
-    _g = Eigen::Vector3d::Zero();
+    _g = Eigen::VectorXd::Zero(6);
     _J_c.resize(4, Eigen::MatrixXd::Identity(6, _model->getJointNum()));
-    _J_cz = Eigen::MatrixXd::Identity(3, 4);
-    _J_cz_pseudo_inverse = Eigen::MatrixXd::Identity(4, 3);
+    _J_cz = Eigen::MatrixXd::Identity(6, 4);
+    _J_cz_pseudo_inverse = Eigen::MatrixXd::Identity(4, 6);
     _J_leg.resize(4, Eigen::MatrixXd::Identity(6, _model->getJointNum()));
+    _contact_force_z = Eigen::VectorXd::Zero(4);
 
     // FIXME: Other
     _total_Jd_Qd = Eigen::VectorXd::Zero(46);
@@ -277,7 +278,9 @@ void ControllerManager::compute_gravity_compensation(){
 
     _model->computeGravityCompensation(_gravity_torque);
 
-    _g = _gravity_torque.segment<3>(2);
+    _g = _gravity_torque.head(6);   // isolate the torque related to the floating base, so the first 6 elements
+
+    cout << "Floating base gravity:\n" << _g << endl;
 
     // Computation of the contact force
 
@@ -287,13 +290,23 @@ void ControllerManager::compute_gravity_compensation(){
 
         _model->getJacobian(end_link, _J_c[i]); // _J_c[i] is a 6 x 46 matrix
 
-        _J_cz.col(i) = _J_c[i].transpose().block(2, 2, 1, 3);
+        cout << end_link << "\n" << _J_c[i].block(0, 0, 6, 6) << endl;
+
+        _J_cz.col(i).noalias() = _J_c[i].transpose().block(0, 2, 1, 6);
 
     }
 
-    _J_cz_pseudo_inverse = _J_cz.completeOrthogonalDecomposition().pseudoInverse();   // pseudo inverse computation
+    cout << "J_fb:\n" << _J_cz << endl;
+    cout << ".............................." << endl;
+
+    _J_cz_pseudo_inverse.noalias() = _J_cz.completeOrthogonalDecomposition().pseudoInverse();   // pseudo inverse computation
+
+    cout << "J_pseudo inverse:\n" << _J_cz_pseudo_inverse << endl;
+    cout << "--------------------------" << endl;
 
     _contact_force_z.noalias() = -(_J_cz_pseudo_inverse * _g);   // F_contact
+
+    cout << "contact force:\n "<< _contact_force_z.transpose() << endl;
 
     // τ = -τ_cartesian -τ_contact + g
 
@@ -309,7 +322,7 @@ void ControllerManager::compute_gravity_compensation(){
         _msg.contact_forces[i] = _contact_force_z[i];
 
         _model->getJacobian(_tasks_casted[i]->getDistalLink(),
-                                    _J_leg[i]);
+                            _J_leg[i]);
 
         _torque_contact.noalias() += _J_leg[i].transpose() * wrench;
 
@@ -334,6 +347,7 @@ void ControllerManager::control_law(){
     // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
     _torque.noalias() = _torque_cartesian + _torque_contact + _non_linear_torque + _total_Jd_Qd;
 
+    // ------------- LOGGER -------------
     // cout << _torque_contact.head(6).transpose() << endl;
     // _logger->add("non_linear_terms", _non_linear_torque);
     // _logger->add("gravity", _gravity_torque);
@@ -367,10 +381,11 @@ void ControllerManager::vectorEigenToMsg(){
         _msg.non_linear_torque[i] = _non_linear_torque[i];
         _msg.contact_torque[i] = _torque_contact[i];
         _msg.torque[i] = _torque[i];
+        if (i < 6)
+            _msg.gravity_torque_floating_base[i] = _gravity_torque[i];
 
     }
 
 }
 
 XBOT2_REGISTER_PLUGIN(ControllerManager, controllermanager)
-
