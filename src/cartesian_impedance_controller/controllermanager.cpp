@@ -133,7 +133,11 @@ void ControllerManager::run()
     _robot->sense();
 
     // CartesIO pluing update will compute the torque base on the controller and set them into the model
+    // auto tic = std::chrono::high_resolution_clock::now();
     _solver->update(_time, _dt);
+    // auto toc = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<float> fsec = toc - tic;
+    // std::cout << fsec.count() << std::endl;
 
     // Get the torque from the model
     _model->getJointEffort(_torque_cartesian);
@@ -280,7 +284,7 @@ void ControllerManager::compute_gravity_compensation(){
 
     _g = _gravity_torque.head(6);   // isolate the torque related to the floating base, so the first 6 elements
 
-    cout << "Floating base gravity:\n" << _g << endl;
+    // cout << "Floating base gravity:\n" << _g << endl;
 
     // Computation of the contact force
 
@@ -290,23 +294,23 @@ void ControllerManager::compute_gravity_compensation(){
 
         _model->getJacobian(end_link, _J_c[i]); // _J_c[i] is a 6 x 46 matrix
 
-        cout << end_link << "\n" << _J_c[i].block(0, 0, 6, 6) << endl;
+        // cout << end_link << "\n" << _J_c[i].block(0, 0, 6, 6) << endl;
 
         _J_cz.col(i).noalias() = _J_c[i].transpose().block(0, 2, 1, 6);
 
     }
 
-    cout << "J_fb:\n" << _J_cz << endl;
-    cout << ".............................." << endl;
+    // cout << "J_fb:\n" << _J_cz << endl;
+    // cout << ".............................." << endl;
 
     _J_cz_pseudo_inverse.noalias() = _J_cz.completeOrthogonalDecomposition().pseudoInverse();   // pseudo inverse computation
 
-    cout << "J_pseudo inverse:\n" << _J_cz_pseudo_inverse << endl;
-    cout << "--------------------------" << endl;
+    // cout << "J_pseudo inverse:\n" << _J_cz_pseudo_inverse << endl;
+    // cout << "--------------------------" << endl;
 
     _contact_force_z.noalias() = -(_J_cz_pseudo_inverse * _g);   // F_contact
 
-    cout << "contact force:\n "<< _contact_force_z.transpose() << endl;
+    // cout << "contact force:\n "<< _contact_force_z.transpose() << endl;
 
     // τ = -τ_cartesian -τ_contact + g
 

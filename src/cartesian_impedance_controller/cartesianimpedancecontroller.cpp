@@ -20,7 +20,8 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
 {
     // Inizialize Jacobian and Joint inertia matrix
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
-    _model->getInertiaMatrix(_B_inv);
+    _B_inv = Eigen::MatrixXd::Zero(46,46);
+    //_model->getInertiaMatrix(_B_inv);
     // update_inertia();
 
     // Inizialize all parameteres to zero
@@ -76,14 +77,17 @@ void CartesianImpedanceController::update_inertia()
     _model->getInertiaMatrix(_B_inv);
 
     // Λ = (J * B¯¹ * J^T)¯¹
-    _op_sp_inertia.noalias() = _J * _B_inv.inverse() * _J.transpose();
+    _op_sp_inertia.noalias() = _J * _B_inv.llt().solve(_J.transpose());
 
     /* Make a controller on the legs will cause a singularity in the Jacobian (no joint on the wheel),
      * resulting in a non invertible task space inertia matrix. A possible solution is to
      * invert the matrix using the inverse of the SVD decomposition (since Λ is symmetric
      * is equal to a spectral theorem UVU^T), quick and dirty method.
     */
+
     _op_sp_inertia.noalias() = svd_inverse(_op_sp_inertia);
+
+
 
     // --------------- DEBUG ---------------
     //cout << "Lambda:\n" << _op_sp_inertia << endl;
@@ -100,7 +104,7 @@ void CartesianImpedanceController::update_D()
     // --------------- DEBUG ---------------
     // cout << string(_end_effector_link + "\n")  << _K_omega << endl << _Q.transpose() << endl;
 
-    isPositiveDefinite(_D); // checks if the matrix is positive definite
+    //isPositiveDefinite(_D); // checks if the matrix is positive definite
 
 }
 
@@ -123,8 +127,8 @@ void CartesianImpedanceController::compute_error()
 {
 
     // Reset position and velocity error
-    _e.noalias() = Eigen::Vector6d::Zero();
-    _edot.noalias() = Eigen::Vector6d::Zero();
+    _e.setZero();
+    _edot.setZero();
 
     // Position error
     _e << _x_ref.translation() - _x_real.translation(), orientation_error();
@@ -166,9 +170,10 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
 
     compute_error();
 
+
     // Reset to zero each cycle
-    _force = Eigen::Vector6d::Zero(6);
-    _torque = Eigen::VectorXd::Zero(46);
+    _force.setZero();
+    _torque.setZero();
 
     // Cartesian controller law equation
     _force.noalias() = (_op_sp_inertia * _xddot_ref) + (_D * _edot) + (_K * _e);
