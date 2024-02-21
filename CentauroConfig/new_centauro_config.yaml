@@ -68,8 +68,8 @@ xbotcore_plugins:
       type: controllermanager
       thread: rt_main
       params:
-        stack_path: ${PWD}/stack_problem.yaml
-        stab_controller_path: ${PWD}/roll_pitch_controller_config.yaml
+        stack_path: /home/embedded/riccardo_ws/src/riccardo_giacchino_master_thesis/CentauroConfig/stack_problem.yaml
+        stab_controller_path: /home/embedded/riccardo_ws/src/riccardo_giacchino_master_thesis/CentauroConfig/roll_pitch_controller_config.yaml
         stab_control_enable: 0
         
     

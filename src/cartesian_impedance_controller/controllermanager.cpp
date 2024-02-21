@@ -385,8 +385,6 @@ void ControllerManager::vectorEigenToMsg(){
         _msg.non_linear_torque[i] = _non_linear_torque[i];
         _msg.contact_torque[i] = _torque_contact[i];
         _msg.torque[i] = _torque[i];
-        if (i < 6)
-            _msg.gravity_torque_floating_base[i] = _gravity_torque[i];
 
     }
 
