@@ -133,11 +133,7 @@ void ControllerManager::run()
     _robot->sense();
 
     // CartesIO pluing update will compute the torque base on the controller and set them into the model
-    // auto tic = std::chrono::high_resolution_clock::now();
     _solver->update(_time, _dt);
-    // auto toc = std::chrono::high_resolution_clock::now();
-    // std::chrono::duration<float> fsec = toc - tic;
-    // std::cout << fsec.count() << std::endl;
 
     // Get the torque from the model
     _model->getJointEffort(_torque_cartesian);

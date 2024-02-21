@@ -75,8 +75,6 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     }
 
-    cout << "------------" << endl;
-
     _model->setJointEffort(_effort);
 
     return true;
