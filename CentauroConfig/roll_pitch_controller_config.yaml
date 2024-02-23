@@ -1,5 +1,5 @@
-# definitions:
-#  - &controller_gain     0.8
+# .definitions:
+#  - &controller_gain     2
 #  - &damping_factor 	2
 
 # Leg1:

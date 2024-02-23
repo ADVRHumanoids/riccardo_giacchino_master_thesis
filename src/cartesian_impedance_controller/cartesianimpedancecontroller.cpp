@@ -182,7 +182,7 @@ Eigen::VectorXd CartesianImpedanceController::compute_torque()
     _torque.noalias() = _J.transpose() * _force;
 
     // --------------- DEBUG ---------------
-    //cout << torque.transpose() << endl;
+    //cout << _torque.transpose() << endl;
     //cout << "Force:\n" << _force << endl;
 
     // --------------- LOGGER ---------------

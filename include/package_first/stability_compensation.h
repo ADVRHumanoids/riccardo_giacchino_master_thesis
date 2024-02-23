@@ -85,6 +85,8 @@ private:
     Eigen::Vector3d _angular_vel;
     Eigen::Vector3d _linear_acc;
 
+    Eigen::VectorXd _joint_pose;
+
     Eigen::Affine3d _leg_pose, _leg_pose_2;
     Eigen::Affine3d _relative_leg_pose, _relative_leg_pose_2;
     Eigen::Affine3d _reference_pose, _reference_pose_2;
@@ -95,10 +97,15 @@ private:
     double _K_v_pitch, _K_p_pitch, _damping_factor_pitch;
     double _settling_time_factor;
 
+    double _roll_vel, _pitch_vel;
+
     Eigen::Vector3d _rpy;
     double _roll_angle, _roll_acc;
     double _pitch_angle, _pitch_acc;
     double _const_dist_roll, _const_dist_pitch;
+
+    double _roll_angle_ref;
+    double _initial_ref;
 
     double _delta_z_ddot;
     double _delta_z_dot;

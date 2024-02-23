@@ -116,6 +116,11 @@ void ControllerManager::run()
     _robot->sense();
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
 
+    //----------------
+    _imu->getOrientation(_floating_base_orientation);
+    _model->setFloatingBaseOrientation(_floating_base_orientation);
+    _model->update();
+
     // Update the reference values for the
     if (stab_controller_enable == true){
 
@@ -125,12 +130,6 @@ void ControllerManager::run()
 
         }
     }
-
-    //----------------
-    _imu->getOrientation(_floating_base_orientation);
-    _model->setFloatingBaseOrientation(_floating_base_orientation);
-    _model->update();
-    _robot->sense();
 
     // CartesIO pluing update will compute the torque base on the controller and set them into the model
     _solver->update(_time, _dt);
@@ -345,7 +344,9 @@ void ControllerManager::control_law(){
     _model->computeNonlinearTerm(_non_linear_torque);
 
     // τ = g_a + (C + J\dot) * q\dot + τ_cartesian
-    _torque.noalias() = _torque_cartesian + _torque_contact + _non_linear_torque + _total_Jd_Qd;
+    _torque.noalias() = _torque_cartesian + _torque_contact + _non_linear_torque /*+ _total_Jd_Qd*/;
+
+    // cout << _torque.head(6).transpose() << endl;
 
     // ------------- LOGGER -------------
     // cout << _torque_contact.head(6).transpose() << endl;
