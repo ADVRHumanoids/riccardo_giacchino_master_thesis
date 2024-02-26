@@ -122,6 +122,7 @@ void ControllerManager::run()
     _model->update();
 
     // ----------------- LOGGER -----------------
+    _msg.time = _time;
     _msg.angular_velocity.angular.x = _angular_vel_imu.x();
     _msg.angular_velocity.angular.y = _angular_vel_imu.y();
     _msg.angular_velocity.angular.z = _angular_vel_imu.z();

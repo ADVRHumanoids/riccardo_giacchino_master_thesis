@@ -9,3 +9,5 @@ float64 pitch_angle
 
 geometry_msgs/Twist angular_velocity
 geometry_msgs/Twist linear_acceleration
+
+float64 time
