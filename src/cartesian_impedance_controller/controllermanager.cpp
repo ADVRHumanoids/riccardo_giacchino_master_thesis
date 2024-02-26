@@ -117,9 +117,19 @@ void ControllerManager::run()
     _model->syncFrom(*_robot, XBot::Sync::All, XBot::Sync::MotorSide);
 
     //----------------
-    _imu->getOrientation(_floating_base_orientation);
+    _imu->getImuData(_floating_base_orientation, _linear_acc_imu, _angular_vel_imu);
     _model->setFloatingBaseOrientation(_floating_base_orientation);
     _model->update();
+
+    // ----------------- LOGGER -----------------
+    _msg.angular_velocity.angular.x = _angular_vel_imu.x();
+    _msg.angular_velocity.angular.y = _angular_vel_imu.y();
+    _msg.angular_velocity.angular.z = _angular_vel_imu.z();
+    _msg.linear_acceleration.linear.x = _linear_acc_imu.x();
+    _msg.linear_acceleration.linear.y = _linear_acc_imu.y();
+    _msg.linear_acceleration.linear.z = _linear_acc_imu.z();
+    _msg.roll_angle = atan2(_floating_base_orientation(2, 1), _floating_base_orientation(2, 2));
+    _msg.pitch_angle = atan2(-_floating_base_orientation(2, 0), sqrt(_floating_base_orientation(2, 2) * _floating_base_orientation(2, 2) + _floating_base_orientation(2, 1) * _floating_base_orientation(2, 1)));
 
     // Update the reference values for the
     if (stab_controller_enable == true){

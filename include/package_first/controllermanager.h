@@ -108,6 +108,8 @@ private:
 
     ImuSensor::ConstPtr _imu;
     Eigen::Matrix3d _floating_base_orientation;
+    Eigen::Vector3d _angular_vel_imu;
+    Eigen::Vector3d _linear_acc_imu;
 
     RosSupport::Ptr _ros;
     riccardo_giacchino_master_thesis::Custom_torque _msg;

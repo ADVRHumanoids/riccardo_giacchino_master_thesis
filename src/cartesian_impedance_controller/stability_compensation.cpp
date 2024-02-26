@@ -137,7 +137,7 @@ void StabilityCompensation::convertion_to_leg_motion(double dt){
     // _delta_z = (_const_dist_roll * cos(roll_cmd) * _roll_vel +
     //             _const_dist_pitch + cos(pitch_cmd) * _pitch_vel) * 0.5 * dt;
 
-    _delta_z = (_const_dist_roll * sin(_roll_angle)) * 0.5;
+    _delta_z = (_const_dist_roll * sin(_roll_angle) - _const_dist_pitch * sin(_pitch_angle)) * 0.5;
 
     // ------------ DEBUG ------------
     // cout << "Delta acceleration: " << _delta_z_ddot << endl;
