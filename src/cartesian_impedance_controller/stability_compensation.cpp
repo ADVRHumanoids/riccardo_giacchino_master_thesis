@@ -55,7 +55,7 @@ StabilityCompensation::StabilityCompensation(ModelInterface::Ptr model,
 
     // Getting the current position between the leg and its relative leg (roll)
     _model->getPose(_task->getDistalLink(), _comparison_leg_roll, _reference_pose);
-    _const_dist_roll = (_reference_pose.translation().y());    // extracting the distance along y direction
+    _const_dist_roll = - (_reference_pose.translation().y());    // extracting the distance along y direction
 
     // Getting the current position between the leg and its relative leg (pitch)
     _model->getPose(_task->getDistalLink(), _comparison_leg_pitch, _reference_pose_2);
@@ -99,8 +99,8 @@ void StabilityCompensation::control_law(){
     // _roll_acc = _pitch_acc = 0;
 
     // Second order
-    // _roll_acc = - _K_v_roll * (_angular_vel.x()) - _K_p_roll * (_roll_angle);
-    // _pitch_acc = - _K_v_pitch * (_angular_vel.y()) - _K_p_pitch * (_pitch_angle);
+    _roll_acc = - _K_v_roll * (_angular_vel.x()) - _K_p_roll * (_roll_angle);
+    _pitch_acc = - _K_v_pitch * (_angular_vel.y()) - _K_p_pitch * (_pitch_angle);
 
     // ----------- SAFETY FEATURES -----------
     // check_computed_values();
@@ -121,23 +121,23 @@ void StabilityCompensation::convertion_to_leg_motion(double dt){
     // Resetting the values (not needed but for safety)
     _reference_pose = _reference_pose_2 = Eigen::Affine3d::Identity();
 
-    // roll_dot_cmd += _roll_acc * dt;
-    // roll_cmd += roll_dot_cmd * dt + 0.5 * dt * dt * _roll_acc;
+    roll_dot_cmd += _roll_acc * dt;
+    roll_cmd += roll_dot_cmd * dt + 0.5 * dt * dt * _roll_acc;
 
-    // pitch_dot_cmd += _pitch_acc * dt;
-    // pitch_cmd += pitch_dot_cmd * dt + 0.5 * dt * dt * _pitch_acc;
+    pitch_dot_cmd += _pitch_acc * dt;
+    pitch_cmd += pitch_dot_cmd * dt + 0.5 * dt * dt * _pitch_acc;
 
-    // _delta_z_ddot = (_const_dist_roll * (- sin(roll_cmd) * pow(roll_dot_cmd, 2) + cos(roll_cmd) * _roll_acc) +
-    //                 _const_dist_pitch * (- sin(pitch_cmd) * pow(pitch_dot_cmd, 2) + cos(pitch_cmd) * _pitch_acc)) * 0.5;
+    _delta_z_ddot = (_const_dist_roll * (- sin(roll_cmd) * pow(roll_dot_cmd, 2) + cos(roll_cmd) * _roll_acc) +
+                     _const_dist_pitch * (- sin(pitch_cmd) * pow(pitch_dot_cmd, 2) + cos(pitch_cmd) * _pitch_acc)) * 0.5;
 
-    // _delta_z_dot += _delta_z_ddot * dt;
+    _delta_z_dot += _delta_z_ddot * dt;
 
-    // _delta_z = (dt * _delta_z_dot) + (0.5 * dt * dt * _delta_z_ddot);
+    _delta_z += (dt * _delta_z_dot) + (0.5 * dt * dt * _delta_z_ddot);
 
     // _delta_z = (_const_dist_roll * cos(roll_cmd) * _roll_vel +
     //             _const_dist_pitch + cos(pitch_cmd) * _pitch_vel) * 0.5 * dt;
 
-    _delta_z = (_const_dist_roll * sin(_roll_angle) - _const_dist_pitch * sin(_pitch_angle)) * 0.5;
+    //_delta_z = (_const_dist_roll * sin(_roll_angle) + _const_dist_pitch * sin(_pitch_angle)) * 0.5;
 
     // ------------ DEBUG ------------
     // cout << "Delta acceleration: " << _delta_z_ddot << endl;
