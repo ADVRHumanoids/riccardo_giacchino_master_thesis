@@ -7,6 +7,7 @@
 bool ControllerManager::on_initialize()
 {
     _dt = getPeriodSec();
+    _time = 0;
 
     _robot->sense();
 
@@ -172,6 +173,21 @@ void ControllerManager::run()
     //     _logger->add(string("pos_err_" + task->getName()), pos_ref.translation() - pos_real.translation());
     // }
     // _logger->add("time", _time);
+
+
+    _imu->getImuData(_floating_base_orientation,
+                     _angular_vel_imu,
+                     _linear_acc_imu);
+
+    _msg.roll_angle = atan2(_floating_base_orientation(2, 1), _floating_base_orientation(2, 2));
+    _msg.pitch_angle = atan2(-_floating_base_orientation(2, 0), sqrt(_floating_base_orientation(2, 2) * _floating_base_orientation(2, 2) + _floating_base_orientation(2, 1) * _floating_base_orientation(2, 1)));
+    _msg.time = _time;
+    _msg.angular_velocity.angular.x = _angular_vel_imu.x();
+    _msg.angular_velocity.angular.y = _angular_vel_imu.y();
+    _msg.angular_velocity.angular.z = _angular_vel_imu.z();
+    _msg.linear_acceleration.linear.x = _linear_acc_imu.x();
+    _msg.linear_acceleration.linear.y = _linear_acc_imu.y();
+    _msg.linear_acceleration.linear.z = _linear_acc_imu.z();
 
     // Update the time for the solver
     _time += _dt;

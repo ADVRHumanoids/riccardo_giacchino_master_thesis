@@ -35,8 +35,8 @@ CartesianImpedanceSolver::CartesianImpedanceSolver(ProblemDescription ik_problem
                                                                                   task_casted->getBaseLink(),
                                                                                   task_casted->getName());
 
-        _imp.mass = _impedance_controller[task_casted]->get_Mass();
-        task_casted->setImpedance(_imp);
+        // _imp.mass = _impedance_controller[task_casted]->get_Mass();
+        // task_casted->setImpedance(_imp);
 
     }
 
@@ -54,7 +54,6 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
     _effort.setZero();
 
-
     for (auto& pair : _impedance_controller){
 
         _imp = pair.first->getImpedance();
@@ -62,16 +61,10 @@ bool CartesianImpedanceSolver::update(double time, double period){
 
         _impedance_controller[pair.first]->set_stiffness(_imp.stiffness);
         _impedance_controller[pair.first]->set_damping_factor(_imp.damping);
+
         _impedance_controller[pair.first]->set_reference_value(_Tref, _vel_ref, _acc_ref);
 
-        // _imp.mass = _impedance_controller[pair.first]->get_Mass();
-        // pair.first->setImpedance(_imp);
-
-        // auto tic = std::chrono::high_resolution_clock::now();
         _effort += _impedance_controller[pair.first]->compute_torque();
-        // auto toc = std::chrono::high_resolution_clock::now();
-        // std::chrono::duration<float> fsec = toc - tic;
-        // std::cout << fsec.count() << std::endl;
 
     }
 

@@ -21,7 +21,7 @@ CartesianImpedanceController::CartesianImpedanceController(ModelInterface::Ptr m
     // Inizialize Jacobian and Joint inertia matrix
     _model->getRelativeJacobian(_end_effector_link, _root_link, _J);
     _B_inv = Eigen::MatrixXd::Zero(46,46);
-    //_model->getInertiaMatrix(_B_inv);
+    // _model->getInertiaMatrix(_B_inv);
     // update_inertia();
 
     // Inizialize all parameteres to zero
@@ -84,7 +84,6 @@ void CartesianImpedanceController::update_inertia()
      * invert the matrix using the inverse of the SVD decomposition (since Λ is symmetric
      * is equal to a spectral theorem UVU^T), quick and dirty method.
     */
-
     _op_sp_inertia.noalias() = svd_inverse(_op_sp_inertia);
 
 

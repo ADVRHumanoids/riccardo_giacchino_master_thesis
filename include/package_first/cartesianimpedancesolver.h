@@ -93,6 +93,8 @@ private:
     Eigen::Vector6d _vel_ref;
     Eigen::Vector6d _acc_ref;
 
+    bool bol = false;
+
     Impedance _imp;
 
 };
