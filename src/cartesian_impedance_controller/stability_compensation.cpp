@@ -132,7 +132,7 @@ void StabilityCompensation::convertion_to_leg_motion(double dt){
 
     _delta_z_dot += _delta_z_ddot * dt;
 
-    _delta_z += (dt * _delta_z_dot) + (0.5 * dt * dt * _delta_z_ddot);
+    _delta_z = (dt * _delta_z_dot) + (0.5 * dt * dt * _delta_z_ddot);
 
     // _delta_z = (_const_dist_roll * cos(roll_cmd) * _roll_vel +
     //             _const_dist_pitch + cos(pitch_cmd) * _pitch_vel) * 0.5 * dt;
@@ -174,7 +174,7 @@ void StabilityCompensation::update(double time, double period){
     tf::twistEigenToMsg(_reference_acc, _msg.old_reference_acceleration);
 
     // Update the reference values of the task with computed values
-    _reference_pose.translation().z() = _initial_ref + _delta_z;
+    _reference_pose.translation().z() += _delta_z;
     _reference_vel(2) = _delta_z_dot;
     _reference_acc(2) = _delta_z_ddot;
 

@@ -64,7 +64,7 @@ Leg1:
     relative_leg: contact_2
     damping_factor: 0.7
   Pitch:
-    gain: 0.8
+    gain: 0
     relative_leg: contact_3
     damping_factor: 0.7
   Safety_limit:
@@ -78,7 +78,7 @@ Leg2:
     relative_leg: contact_1
     damping_factor: 0.7
   Pitch:
-    gain: 0.8
+    gain: 0
     relative_leg: contact_4
     damping_factor: 0.7
   Safety_limit:
@@ -92,7 +92,7 @@ Leg3:
     relative_leg: contact_4
     damping_factor: 0.7
   Pitch:
-    gain: 0.8
+    gain: 0
     relative_leg: contact_1
     damping_factor: 0.7
   Safety_limit:
@@ -106,7 +106,7 @@ Leg4:
     relative_leg: contact_3
     damping_factor: 0.7
   Pitch:
-    gain: 0.8
+    gain: 0
     relative_leg: contact_2
     damping_factor: 0.7
   Safety_limit:
